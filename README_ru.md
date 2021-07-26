@@ -21,14 +21,14 @@
 
 ## Шаг 1. Клонируйте репозиторий с кодом примера 
 
-Выполните следующий код, чтобы получить демо приложение.
+Выполните следующую команду, чтобы получить демо приложение.
 
 ```
 git clone https://github.com/OutSorcerer/pocket-automl-android-tutorial
 ```
 
 Откройте код примера в Android Studio. Для этого сперва запустите Android Studio,
-выберете `Open an existing project`, затем выберите папку `pocket-automl-android-tutorial`.
+выберите `Open an existing project`, затем выберите папку `pocket-automl-android-tutorial`.
 
 <img src="images/classifydemo_img1.png?raw=true" />
 
@@ -51,7 +51,7 @@ git clone https://github.com/OutSorcerer/pocket-automl-android-tutorial
 ### Запуск на устройстве
 
 Если Вы хотите тестировать приложение на настоящем Anroid устройстве, подключите устройство к компьютеру и одобрите все разрешения на отладку, которые появляются на экране Вашего устройства.
-Нажмите `Run -> Run app.` в главном меню Android Studio. 
+Нажмите `Run -> Run 'app'` в главном меню Android Studio. 
 Выберите из списка устройство, куда будет установлено приложение.
 
 ### Запуск на эмуляторе
@@ -100,7 +100,7 @@ git clone https://github.com/OutSorcerer/pocket-automl-android-tutorial
 
 * Нажмите `ЭКСПОРТИРОВАТЬ В ФОРМАТЕ TF LITE`
 
-* Проведите вниз по строке состояния в верхней части экрана, чтобы открыть панель уведомлений и отслеживать прогресс экспорта. Это займет несколько минут.
+* Проведите вниз по строке состояния в верхней части экрана, чтобы открыть панель уведомлений и отслеживать прогресс экспорта. Процесс экспорта занимает несколько минут.
 
   <img src="images/ru/export_notification_progress.png?raw=true" style="width: 50%" />
 

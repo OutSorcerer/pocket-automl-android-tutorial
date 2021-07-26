@@ -55,7 +55,7 @@ libraries.
 ### Run on a device
 
 If you are willing to test the app on an Android device, connect the device to the computer and be sure to approve any ADB
-permission prompts that appear on your phone. Click `Run -> Run app.` from the main menu of Android Studio. Select
+permission prompts that appear on your phone. Click `Run -> Run 'app'` from the main menu of Android Studio. Select
 the deployment target in the connected devices to the device on which the app
 will be installed. This will install the app on the device.
 
@@ -105,7 +105,7 @@ Re-installing the app may require you to uninstall the previous installations.
 
 * Press `EXPORT IN TENSORFLOW LITE FORMAT`
 
-* Swipe down on the status bar at the top of the screen to open the notification drawer and track export progress. It takes few minutes.
+* Swipe down on the status bar at the top of the screen to open the notification drawer and track export progress. The export takes few minutes.
 
   <img src="images/export_notification_progress.png?raw=true" style="width: 50%" />
 
