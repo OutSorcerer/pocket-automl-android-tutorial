@@ -7,7 +7,7 @@
 
 ## Overview
 
-This document will walk you through the steps for creating your Android app that run an image classification model trained in [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and exported in TensorFlow Lite format. The app will continuously classify whatever it sees from the device's back camera. 
+This document will walk you through the steps for creating your Android app that runs an image classification model trained in [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and exported in TensorFlow Lite format. The app will continuously classify whatever it sees from the device's back camera. 
 
 This tutorial is based on [TensorFlow Lite image classification Android example application](https://github.com/tensorflow/examples/tree/master/lite/examples/image_classification/android). 
 For an explanation of its source code, see
