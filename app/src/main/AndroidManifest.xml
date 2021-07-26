@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.tensorflow.lite.examples.classification">
+    package="com.evgeniymamchenko.pocketautoml.examples.classification">
 
     <uses-sdk />
 
@@ -10,9 +10,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_pocket_automl"
         android:label="@string/tfe_ic_app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/ic_launcher_pocket_automl_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.ImageClassification">
         <activity

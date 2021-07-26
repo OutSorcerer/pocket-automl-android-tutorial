@@ -32,7 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/black"
-            tools:context="org.tensorflow.lite.examples.classification.CameraActivity" />
+            tools:context="com.evgeniymamchenko.pocketautoml.examples.classification.CameraActivity" />
 
 
         <androidx.appcompat.widget.Toolbar
@@ -40,12 +40,25 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:layout_alignParentTop="true"
-            android:background="@color/tfe_semi_transparent">
+            android:background="@color/pocket_automl_semi_transparent">
 
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/tfl2_logo" />
+                android:src="@drawable/ic_pocket_automl_top"
+                android:paddingStart="-22dp"
+                android:paddingEnd="-25dp"
+                android:scaleType="centerCrop"
+                />
+
+            <TextView
+                android:id="@+id/frame"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pocket AutoML"
+                android:textColor="@android:color/white"
+                android:textSize="36sp"/>
+
         </androidx.appcompat.widget.Toolbar>
 
     </RelativeLayout>

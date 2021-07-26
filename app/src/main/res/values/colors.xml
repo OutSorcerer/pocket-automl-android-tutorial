@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="tfe_color_primary">#ffa800</color>
-    <color name="tfe_color_primary_dark">#ff6f00</color>
-    <color name="tfe_color_accent">#425066</color>
-
-    <color name="tfe_semi_transparent">#66000000</color>
+    <color name="pocket_automl_color_primary">#673AB7</color>
+    <color name="pocket_automl_color_primary_dark">#512DA8</color>
+    <color name="pocket_automl_color_accent">#B00020</color>
+    <color name="pocket_automl_semi_transparent">#80673AB7</color>
 </resources>

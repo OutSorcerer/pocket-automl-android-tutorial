@@ -1,5 +1,5 @@
 <resources>
-    <string name="tfe_ic_app_name" translation_description="Image Classification demo app [CHAR_LIMIT=40]">TFL Classify</string>
+    <string name="tfe_ic_app_name" translation_description="Image Classification demo app [CHAR_LIMIT=40]">Pocket AutoML Classify</string>
     <string name="tfe_ic_camera_error" translation_description="Error regarding camera support[CHAR_LIMIT=40]">This device doesn\'t support Camera2 API.</string>
     <string name="tfe_ic_gpu_quant_error" translation_description="Error regarding GPU support for Quant models[CHAR_LIMIT=60]">GPU does not yet supported quantized models.</string>
     <string name="tfe_ic_model" translatable="false">Model:</string>
@@ -8,6 +8,7 @@
         <item>Float_EfficientNet</item>
         <item>Quantized_MobileNet</item>
         <item>Float_MobileNet</item>
+        <item>Pocket_AutoML</item>
     </string-array>
 
     <string name="tfe_ic_device" translatable="false">Device:</string>
