@@ -1,126 +1,73 @@
-# TensorFlow Lite image classification Android example application
+# Pocket AutoML: Android App Creation Tutorial
+
+## Translations
+
+* [English](README.md) (this document)
+* [Русский](README_ru.md)
 
 ## Overview
 
-This is an example application for
-[TensorFlow Lite](https://tensorflow.org/lite) on Android. It uses
-[Image classification](https://www.tensorflow.org/lite/models/image_classification/overview)
-to continuously classify whatever it sees from the device's back camera.
-Inference is performed using the TensorFlow Lite Java API. The demo app
-classifies frames in real-time, displaying the top most probable
-classifications. It allows the user to choose between a floating point or
-[quantized](https://www.tensorflow.org/lite/performance/post_training_quantization)
-model, select the thread count, and decide whether to run on CPU, GPU, or via
-[NNAPI](https://developer.android.com/ndk/guides/neuralnetworks).
+This document will walk you through the steps for creating your Android app that run an image classification model trained in [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and exported in TensorFlow Lite format. The app will continuously classify whatever it sees from the device's back camera. 
 
-These instructions walk you through building and running the demo on an Android
-device. For an explanation of the source, see
-[TensorFlow Lite Android image classification example](EXPLORE_THE_CODE.md).
+This tutorial is based on [TensorFlow Lite image classification Android example application](https://github.com/tensorflow/examples/tree/master/lite/examples/image_classification/android). 
+For an explanation of its source code, see
+[Explore the code](EXPLORE_THE_CODE.md).
 
-<!-- TODO(b/124116863): Add app screenshot. -->
-
-### Model
-
-We provide 4 models bundled in this App: MobileNetV1 (float), MobileNetV1
-(quantized), EfficientNetLite (float) and EfficientNetLite (quantized).
-Particularly, we chose "mobilenet_v1_1.0_224" and "efficientnet-lite0".
-MobileNets are classical models, while EfficientNets are the latest work. The
-chosen EfficientNet (lite0) has comparable speed with MobileNetV1, and on the
-ImageNet dataset, EfficientNet-lite0 out performs MobileNetV1 by ~4% in terms of
-top-1 accuracy.
-
-For details of the model used, visit
-[Image classification](https://www.tensorflow.org/lite/models/image_classification/overview).
-
-Downloading, extracting, and placing the model in the assets folder is managed
-automatically by download.gradle.
+> If you have any issues following this tutorial please contact me (the creator of Pocket AutoML) via [email](mailto:pocket-automl@evgeniymamchenko.com) at or by creating a GitHub [issue](https://github.com/OutSorcerer/pocket-automl-android-tutorial/issues). 
 
 ## Requirements
 
-*   Android Studio 3.2 (installed on a Linux, Mac or Windows machine)
+* [Android Studio](https://developer.android.com/studio) 4.2 (installed on a Linux, Mac or Windows machine)
 
-*   Android device in
-    [developer mode](https://developer.android.com/studio/debug/dev-options)
-    with USB debugging enabled
+* (if not using an emulator) an Android device in
+  [developer mode](https://developer.android.com/studio/debug/dev-options)
+  with USB debugging enabled and a USB cable (to connect Android device to your computer)
+## Step 1. Clone the Pocket AutoML example source code
 
-*   USB cable (to connect Android device to your computer)
-
-## Build and run
-
-### Step 1. Clone the TensorFlow examples source code
-
-Clone the TensorFlow examples GitHub repository to your computer to get the demo
-application.
+Run the following command to get the demo application.
 
 ```
-git clone https://github.com/tensorflow/examples
+git clone https://github.com/OutSorcerer/pocket-automl-android-tutorial
 ```
 
-Open the TensorFlow source code in Android Studio. To do this, open Android
+Open the example source code in Android Studio. To do this, open Android
 Studio and select `Open an existing project`, setting the folder to
-`examples/lite/examples/image_classification/android`
+`pocket-automl-android-tutorial`
 
 <img src="images/classifydemo_img1.png?raw=true" />
 
-### Step 2. Build the Android Studio project
+Unlike the original example, this one uses only [TFLite Support library](https://www.tensorflow.org/lite/inference_with_metadata/lite_support) to avoid confusion. An alternative is [TensorFlow Lite Task Library](https://www.tensorflow.org/lite/inference_with_metadata/task_library/image_classifier), see the [README](https://github.com/tensorflow/examples/tree/master/lite/examples/image_classification/android#switch-between-inference-solutions-task-library-vs-support-library) of the original example for details.
+
+## Step 2. Build the Android Studio project
 
 Select `Build -> Make Project` and check that the project builds successfully.
-You will need Android SDK configured in the settings. You'll need at least SDK
-version 23. The `build.gradle` file will prompt you to download any missing
+The `build.gradle` file will prompt you to download any missing
 libraries.
-
-#### Switch between inference solutions (Task library vs Support Library)
-
-This Image Classification Android reference app demonstrates two implementation
-solutions:
-
-(1)
-[`lib_task_api`](https://github.com/tensorflow/examples/tree/master/lite/examples/image_classification/android/lib_task_api)
-that leverages the out-of-box API from the
-[TensorFlow Lite Task Library](https://www.tensorflow.org/lite/inference_with_metadata/task_library/image_classifier);
-
-(2)
-[`lib_support`](https://github.com/tensorflow/examples/tree/master/lite/examples/image_classification/android/lib_support)
-that creates the custom inference pipleline using the
-[TensorFlow Lite Support Library](https://www.tensorflow.org/lite/inference_with_metadata/lite_support).
-
-The [`build.gradle`](app/build.gradle) inside `app` folder shows how to change
-`flavorDimensions "tfliteInference"` to switch between the two solutions.
-
-Inside **Android Studio**, you can change the build variant to whichever one you
-want to build and run—just go to `Build > Select Build Variant` and select one
-from the drop-down menu. See
-[configure product flavors in Android Studio](https://developer.android.com/studio/build/build-variants#product-flavors)
-for more details.
-
-For gradle CLI, running `./gradlew build` can create APKs under
-`app/build/outputs/apk` for both solutions.
-
-*Note: If you simply want the out-of-box API to run the app, we recommend
-`lib_task_api` for inference. If you want to customize your own models and
-control the detail of inputs and outputs, it might be easier to adapt your model
-inputs and outputs by using `lib_support`.*
-
-The file `download.gradle` directs gradle to download the two models used in the
-example, placing them into `assets`.
 
 <img src="images/classifydemo_img4.png?raw=true" style="width: 40%" />
 
 <img src="images/classifydemo_img2.png?raw=true" style="width: 60%" />
 
-<aside class="note"><b>Note:</b><p>`build.gradle` is configured to use
-TensorFlow Lite's nightly build.</p><p>If you see a build error related to
-compatibility with Tensorflow Lite's Java API (for example, `method X is
-undefined for type Interpreter`), there has likely been a backwards compatible
-change to the API. You will need to run `git pull` in the examples repo to
-obtain a version that is compatible with the nightly build.</p></aside>
+## Step 3. Install and run the app
 
-### Step 3. Install and run the app
+>Follow this step to make sure that the example runs successfully in your environment using its built-in models. The following steps will demonstrate how to add your custom model from Pocket AutoML into the example app.
 
-Connect the Android device to the computer and be sure to approve any ADB
-permission prompts that appear on your phone. Select `Run -> Run app.` Select
+### Run on a device
+
+If you are willing to test the app on an Android device, connect the device to the computer and be sure to approve any ADB
+permission prompts that appear on your phone. Click `Run -> Run app.` from the main menu of Android Studio. Select
 the deployment target in the connected devices to the device on which the app
 will be installed. This will install the app on the device.
+
+### Run on an an emulator
+
+If you are willing to test the app on an Android emulator
+* select `Tools -> AVD Manager -> Create Virtual Device...`
+* choose a device definition e.g. `Pixel 2` (this controls its screen resolution and density)
+* click `Next` and select a system image, `Android 11 (API level 30)` is recommended, click `Download` on the selected system image, wait for download to complete, click `Next` and `Finish`
+* close the `AVD Manager`, select the newly created device in a list of available devices and click `Run -> Run 'app'` from the main menu of Android Studio
+
+If you want to know more, see [Create and manage virtual devices](https://developer.android.com/studio/run/managing-avds#createavd) in Android documentation.
 
 <img src="images/classifydemo_img5.png?raw=true" style="width: 60%" />
 
@@ -130,12 +77,62 @@ will be installed. This will install the app on the device.
 
 <img src="images/classifydemo_img8.png?raw=true" style="width: 80%" />
 
-To test the app, open the app called `TFL Classify` on your device. When you run
-the app the first time, the app will request permission to access the camera.
+To test the app, open the app called `Pocket AutoML Classify` on your device or emulator.
+When you run the app the first time, the app will request permission to access the camera.
 Re-installing the app may require you to uninstall the previous installations.
 
-## Assets folder
+## Step 4. Train a model in Pocket AutoML 
 
-_Do not delete the assets folder content_. If you explicitly deleted the files,
-choose `Build -> Rebuild` to re-download the deleted model files into the assets
-folder.
+* [Install Pocket AutoML from Google Play Store](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and open it
+
+* Create a task e.g. `Kittens or Puppies` by pressing `+` button
+
+* Create a class e.g. `Kittens`
+  
+  <img src="images/task_with_classes.png?raw=true" style="width: 50%" />
+
+* Add example images of the class by taking photos with a camera or picking them from a storage
+  
+  <img src="images/kitten_images.png?raw=true" style="width: 50%" />
+
+* Go back to the task view by pressing `<-` and repeat these steps for each class
+
+* Go back to the task view by pressing `<-`, switch to the `MODEL` tab and press `TRAIN`
+
+  <img src="images/model_training.png?raw=true" style="width: 50%" />
+
+## Step 5. Export a model in TF Lite format from Pocket AutoML
+
+* Press `EXPORT IN TENSORFLOW LITE FORMAT`
+
+* Swipe down on the status bar at the top of the screen to open the notification drawer and track export progress. It takes few minutes.
+
+  <img src="images/export_notification_progress.png?raw=true" style="width: 50%" />
+
+* When the export is done, press `Share Model` on a notification to open the standard Android Sharesheet, chose a sharing method to send a model to your PC (e.g. send it to yourself via an email app like GMail or store it on your cloud storage like Google Drive or Dropbox)
+  
+  <img src="images/export_notification_share.png?raw=true" style="width: 50%" />
+
+## Step 6. Add your model into the example app
+
+* At this point you will have `<your_task_name>.zip` file on your PC. Extract its contents into `pocket-automl-android-tutorial/models/src/main/assets`. You will have `<your_task_name>.tflite` and `<your_task_name>.labels.txt` there. 
+
+* Open `ClassifierPocketAutoML.java` (by clicking `Navigate -> Search Everywhere` or pressing `Shift` twice and typing its name)
+
+* Replace the implementation of `getModelPath` with `return "<your_task_name>.tflite";`
+
+* Replace the implementation of `getLabelPath` with `return "<your_task_name>.labels.txt";`
+
+* Run the app, swipe up the bottom sheet to expand it and select `Pocket_AutoML` from the `Model` dropdown menu
+
+* You will see the the predicted class and the associated probability as a bold text under an image and probabilities of other classes below. Well done!
+
+  <img src="images/pocket_automl_classify.png?raw=true" style="width: 50%" />
+
+## Attribution statements
+
+TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc. Android is a trademark of Google LLC.
+
+## License
+
+[Apache License 2.0](LICENSE)
