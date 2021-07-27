@@ -7,7 +7,7 @@
 
 ## Overview
 
-This document will walk you through the steps for creating your Android app that runs an image classification model trained in [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and exported in TensorFlow Lite format. The app will continuously classify whatever it sees from the device's back camera. 
+This document will walk you through the steps for creating your Android app that runs a deep learning image classification model trained in [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and exported in TensorFlow Lite format. The app will continuously classify whatever it sees from the device's back camera. 
 
 This tutorial is based on [TensorFlow Lite image classification Android example application](https://github.com/tensorflow/examples/tree/master/lite/examples/image_classification/android). 
 For an explanation of its source code, see
@@ -128,6 +128,28 @@ Re-installing the app may require you to uninstall the previous installations.
 * You will see the the predicted class and the associated probability as a bold text under an image and probabilities of other classes below. Well done!
 
   <img src="images/pocket_automl_classify.png?raw=true" style="width: 50%" />
+
+## Next steps
+
+### Applications
+
+Do you have a task in your area of expertise that can be solved with a help of an image classification model running in a mobile app? Like sorting lego bricks or controlling a robot with hand gestures. 
+
+I will be excited to know what you have done with the help of Pocket AutoML and this tutorial and will add links to Play Store or GitHub into this document.
+
+### Other plarfotms
+
+TF Lite can run not only on Android but on other platforms as well including [iOS](https://www.tensorflow.org/lite/guide/ios), [embedded Linux devices like Raspberry Pi or Coral](https://www.tensorflow.org/lite/guide/python) and [microcontrollers](https://www.tensorflow.org/lite/microcontrollers).
+
+### Other model training methods
+
+You can try other no-code deep learning solutions like [Teachable Machine](https://teachablemachine.withgoogle.com/) or [Lobe](https://www.lobe.ai/).
+
+Pocket AutoML uses transfer learning approach, you can also implement it yourself using a tutorial [Transfer learning and fine-tuning](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/images/transfer_learning.ipynb) in Google Colab.
+
+### Learning deep learning
+
+If you want to learn how to train better models and have a systematic understanding or deep learning I recommend [Deep Learning Specialization](https://www.coursera.org/specializations/deep-learning) and [Machine Learning Engineering for Production (MLOps) Specialization](https://www.coursera.org/specializations/machine-learning-engineering-for-production-mlops) on Coursera.
 
 ## Attribution statements
 
