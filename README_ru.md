@@ -13,7 +13,7 @@
 
 > Если у Вас возникли трудности при следовании этому руководству, напишите мне (создателю Pocket AutoML) на [электронную почту](mailto:pocket-automl@evgeniymamchenko.com) или создайте [issue](https://github.com/OutSorcerer/pocket-automl-android-tutorial/issues) на GitHub.
 
-## Requirements
+## Требования
 
 * [Android Studio](https://developer.android.com/studio) 4.2 (установленная на машине под Linux, Mac или Windows)
 
