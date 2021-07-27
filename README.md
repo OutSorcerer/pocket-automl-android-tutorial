@@ -143,7 +143,7 @@ TF Lite can run not only on Android but on other platforms as well including [iO
 
 ### Other model training methods
 
-You can try other no-code deep learning solutions like [Teachable Machine](https://teachablemachine.withgoogle.com/) or [Lobe](https://www.lobe.ai/).
+You can try other no-code or low-code deep learning solutions like [Teachable Machine](https://teachablemachine.withgoogle.com/), [Lobe](https://www.lobe.ai/) or [TensorFlow Lite Model Maker](https://www.tensorflow.org/lite/guide/model_maker).
 
 Pocket AutoML uses transfer learning approach, you can also implement it yourself using a tutorial [Transfer learning and fine-tuning](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/images/transfer_learning.ipynb) in Google Colab.
 
