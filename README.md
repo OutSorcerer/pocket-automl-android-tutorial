@@ -22,7 +22,40 @@ For an explanation of its source code, see
 * (if not using an emulator) an Android device in
   [developer mode](https://developer.android.com/studio/debug/dev-options)
   with USB debugging enabled and a USB cable (to connect Android device to your computer)
-## Step 1. Clone the Pocket AutoML example source code
+
+## Step 1. Train a model in Pocket AutoML 
+
+* [Install Pocket AutoML from Google Play Store](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and open it
+
+* Create a task e.g. `Kittens or Puppies` by pressing `+` button
+
+* Create a class e.g. `Kittens`
+  
+  <img src="images/task_with_classes.png?raw=true" style="width: 50%" />
+
+* Add example images of the class by taking photos with a camera or picking them from a storage
+  
+  <img src="images/kitten_images.png?raw=true" style="width: 50%" />
+
+* Go back to the task view by pressing `<-` and repeat these steps for each class
+
+* Go back to the task view by pressing `<-`, switch to the `MODEL` tab and press `TRAIN`
+
+  <img src="images/model_training.png?raw=true" style="width: 50%" />
+
+## Step 2. Export a model in TF Lite format from Pocket AutoML
+
+* Press `EXPORT IN TENSORFLOW LITE FORMAT`
+
+* Swipe down on the status bar at the top of the screen to open the notification drawer and track the export progress. The export takes few minutes.
+
+  <img src="images/export_notification_progress.png?raw=true" style="width: 50%" />
+
+* When the export is done, press `Share Model` on a notification to open the standard Android Sharesheet, chose a sharing method to send a model to your PC (e.g. send it to yourself via an email app like GMail or store it on your cloud storage like Google Drive or Dropbox)
+  
+  <img src="images/export_notification_share.png?raw=true" style="width: 50%" />
+
+## Step 3. Clone the Pocket AutoML example source code
 
 Run the following command to get the demo application.
 
@@ -38,7 +71,7 @@ Studio and select `Open an existing project`, setting the folder to
 
 Unlike the original example, this one uses only [TFLite Support library](https://www.tensorflow.org/lite/inference_with_metadata/lite_support) to avoid confusion. An alternative is [TensorFlow Lite Task Library](https://www.tensorflow.org/lite/inference_with_metadata/task_library/image_classifier), see the [README](https://github.com/tensorflow/examples/tree/master/lite/examples/image_classification/android#switch-between-inference-solutions-task-library-vs-support-library) of the original example for details.
 
-## Step 2. Build the Android Studio project
+## Step 4. Build the Android Studio project
 
 Select `Build -> Make Project` and check that the project builds successfully.
 The `build.gradle` file will prompt you to download any missing
@@ -48,9 +81,9 @@ libraries.
 
 <img src="images/classifydemo_img2.png?raw=true" style="width: 60%" />
 
-## Step 3. Install and run the app
+## Step 5. Install and run the app
 
->Follow this step to make sure that the example runs successfully in your environment using its built-in models. The following steps will demonstrate how to add your custom model from Pocket AutoML into the example app.
+>Follow this step to make sure that the example runs successfully in your environment using its built-in models. The following step will demonstrate how to add your custom model from Pocket AutoML into the example app.
 
 ### Run on a device
 
@@ -81,41 +114,9 @@ To test the app, open the app called `Pocket AutoML Classify` on your device or 
 When you run the app the first time, the app will request permission to access the camera.
 Re-installing the app may require you to uninstall the previous installations.
 
-## Step 4. Train a model in Pocket AutoML 
+## Step 6. Add your model from Pocket AutoML into the example app
 
-* [Install Pocket AutoML from Google Play Store](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and open it
-
-* Create a task e.g. `Kittens or Puppies` by pressing `+` button
-
-* Create a class e.g. `Kittens`
-  
-  <img src="images/task_with_classes.png?raw=true" style="width: 50%" />
-
-* Add example images of the class by taking photos with a camera or picking them from a storage
-  
-  <img src="images/kitten_images.png?raw=true" style="width: 50%" />
-
-* Go back to the task view by pressing `<-` and repeat these steps for each class
-
-* Go back to the task view by pressing `<-`, switch to the `MODEL` tab and press `TRAIN`
-
-  <img src="images/model_training.png?raw=true" style="width: 50%" />
-
-## Step 5. Export a model in TF Lite format from Pocket AutoML
-
-* Press `EXPORT IN TENSORFLOW LITE FORMAT`
-
-* Swipe down on the status bar at the top of the screen to open the notification drawer and track export progress. The export takes few minutes.
-
-  <img src="images/export_notification_progress.png?raw=true" style="width: 50%" />
-
-* When the export is done, press `Share Model` on a notification to open the standard Android Sharesheet, chose a sharing method to send a model to your PC (e.g. send it to yourself via an email app like GMail or store it on your cloud storage like Google Drive or Dropbox)
-  
-  <img src="images/export_notification_share.png?raw=true" style="width: 50%" />
-
-## Step 6. Add your model into the example app
-
-* At this point you will have `<your_task_name>.zip` file on your PC. Extract its contents into `pocket-automl-android-tutorial/models/src/main/assets`. You will have `<your_task_name>.tflite` and `<your_task_name>.labels.txt` there. 
+* At this point you must have `<your_task_name>.zip` file on your PC. Extract its contents into `pocket-automl-android-tutorial/models/src/main/assets`. You will have `<your_task_name>.tflite` and `<your_task_name>.labels.txt` there. 
 
 * Open `ClassifierPocketAutoML.java` (by clicking `Navigate -> Search Everywhere` or pressing `Shift` twice and typing its name)
 
