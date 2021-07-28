@@ -134,7 +134,7 @@ Re-installing the app may require you to uninstall the previous installations.
 
 ### Applications
 
-Do you have a task in your area of expertise that can be solved with a help of an image classification model running in a mobile app? Like sorting lego bricks or controlling a robot with hand gestures. 
+Do you have a task at hand that can be solved with a help of an image classification model running in a mobile app? It could be sorting lego bricks or controlling a robot with hand gestures. 
 
 I will be excited to know what you have built with the help of Pocket AutoML and this tutorial and will add links to Play Store or GitHub into this document.
 
