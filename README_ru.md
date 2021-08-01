@@ -7,7 +7,7 @@
 
 ## Обзор
 
-Этот документ содержит шаги, следуя которым Вы создатите Ваше Android приложение, которое будет использовать deep learning модель классификации изображений, натренированную Вами в [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) и экспортированную в формате TensorFlow Lite. Приложение будет непрерывно классифицировать изображения с тыловой камеры устройства.
+Этот документ содержит шаги, следуя которым Вы создадите Ваше Android приложение, которое будет использовать deep learning модель классификации изображений, натренированную Вами в [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) и экспортированную в формате TensorFlow Lite. Приложение будет непрерывно классифицировать изображения с тыловой камеры устройства.
 
 Это руководство основано на [TensorFlow Lite image classification Android example application](https://github.com/tensorflow/examples/tree/master/lite/examples/image_classification/android). Чтобы лучше разобраться в коде, см. [Explore the code](EXPLORE_THE_CODE.md).
 
