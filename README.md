@@ -1,4 +1,4 @@
-# Pocket AutoML: Android App Creation Tutorial
+# Pocket AutoML: Tutorial for Creating an Android App for Image Classification with Deep Learning
 
 ## Translations
 
