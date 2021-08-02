@@ -138,7 +138,7 @@ Do you have a task at hand that can be solved with a help of an image classifica
 
 I will be excited to know what you have built with the help of Pocket AutoML and this tutorial and will add links to Play Store or GitHub into this document.
 
-### Other plarfotms
+### Other platforms
 
 TF Lite can run not only on Android but on other platforms as well including [iOS](https://www.tensorflow.org/lite/guide/ios), [embedded Linux devices like Raspberry Pi or Coral](https://www.tensorflow.org/lite/guide/python) and [microcontrollers](https://www.tensorflow.org/lite/microcontrollers).
 
