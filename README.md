@@ -146,7 +146,7 @@ TF Lite can run not only on Android but on other platforms as well including [iO
 
 You can try other no-code or low-code deep learning solutions like [Teachable Machine](https://teachablemachine.withgoogle.com/), [Lobe](https://www.lobe.ai/), [Create ML](https://developer.apple.com/machine-learning/create-ml/), [Google AutoML Vision](https://cloud.google.com/vision/automl/docs), [Azure Custom Vision](https://azure.microsoft.com/en-us/services/cognitive-services/custom-vision-service/#overview) or [TensorFlow Lite Model Maker](https://www.tensorflow.org/lite/guide/model_maker).
 
-Pocket AutoML uses transfer learning approach, you can also implement it yourself using a tutorial [Transfer learning and fine-tuning](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/images/transfer_learning.ipynb) in Google Colab.
+Pocket AutoML uses [transfer learning](https://www.coursera.org/lecture/convolutional-neural-networks/transfer-learning-4THzO) approach, you can also implement it yourself using a tutorial [Transfer learning and fine-tuning](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/images/transfer_learning.ipynb) in Google Colab.
 
 ### Learning deep learning
 

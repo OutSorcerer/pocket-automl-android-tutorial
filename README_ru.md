@@ -141,7 +141,7 @@ TF Lite может работать не только на Anroid но и на �
 
 Вы можете попробовать другие no-code или low-code deep learning решения вроде [Teachable Machine](https://teachablemachine.withgoogle.com/), [Lobe](https://www.lobe.ai/), [Create ML](https://developer.apple.com/machine-learning/create-ml/), [Google AutoML Vision](https://cloud.google.com/vision/automl/docs), [Azure Custom Vision](https://azure.microsoft.com/en-us/services/cognitive-services/custom-vision-service/#overview) или [TensorFlow Lite Model Maker](https://www.tensorflow.org/lite/guide/model_maker).
 
-Pocket AutoML использует подход transfer learning, Вы можете сами реализовать его используя руководство [Transfer learning and fine-tuning](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/images/transfer_learning.ipynb) в Google Colab.
+Pocket AutoML использует подход [transfer learning](https://www.coursera.org/lecture/convolutional-neural-networks/transfer-learning-4THzO), Вы можете сами реализовать его используя руководство [Transfer learning and fine-tuning](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/images/transfer_learning.ipynb) в Google Colab.
 
 ### Изучение глубокого обучения
 
