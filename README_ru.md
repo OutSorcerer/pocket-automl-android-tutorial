@@ -17,7 +17,7 @@
 
 * [Android Studio](https://developer.android.com/studio) 4.2 (установленная на машине под Linux, Mac или Windows)
 
-* Android устройство в [режиме разрабочика](https://developer.android.com/studio/debug/dev-options) с включенной отладкой по USB и USB кабель (чтобы подключить Android устройство к вашей машине, если не используется эмулятор)
+* [если не используется эмулятор Android] Android устройство в [режиме разрабочика](https://developer.android.com/studio/debug/dev-options) с включенной отладкой по USB и USB кабель (чтобы подключить Android устройство к вашей машине)
 
 ## Шаг 1. Натренируйте модель в Pocket AutoML
 

@@ -19,9 +19,9 @@ For an explanation of its source code, see
 
 * [Android Studio](https://developer.android.com/studio) 4.2 (installed on a Linux, Mac or Windows machine)
 
-* an Android device in
+* [if not using an Android emulator] an Android device in
   [developer mode](https://developer.android.com/studio/debug/dev-options)
-  with USB debugging enabled and a USB cable (to connect Android device to your computer, if not using an emulator)
+  with USB debugging enabled and a USB cable (to connect an Android device to your computer)
 
 ## Step 1. Train a model in Pocket AutoML 
 
