@@ -27,6 +27,7 @@
     <color name="ic_launcher_background">#FFFFFF</color>
     <color name="bottom_sheet_background">#EEEEEE</color>
     <color name="bottom_sheet_text_color">@android:color/black</color>
+    <color name="result_secondary_text_color">#9E9E9E</color>
     <color name="icActive">#FFFFFFFF</color>
     <color name="icFocused">#DDFFFFFF</color>
     <color name="icPressed">#AAFFFFFF</color>

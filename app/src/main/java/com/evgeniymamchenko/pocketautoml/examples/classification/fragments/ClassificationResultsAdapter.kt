@@ -18,7 +18,9 @@ package com.evgeniymamchenko.pocketautoml.examples.classification.fragments
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.evgeniymamchenko.pocketautoml.examples.classification.R
 import com.evgeniymamchenko.pocketautoml.examples.classification.databinding.ItemClassificationResultBinding
 import com.google.mediapipe.tasks.components.containers.Category
 import com.google.mediapipe.tasks.vision.imageclassifier.ImageClassifierResult
@@ -36,7 +38,7 @@ class ClassificationResultsAdapter :
         categories = MutableList(adapterSize) { null }
         if (imageClassifierResult != null) {
             val sortedCategories = imageClassifierResult.classificationResult()
-                .classifications()[0].categories().sortedBy { it.index() }
+                .classifications()[0].categories().sortedByDescending { it.score() }
             val min = kotlin.math.min(sortedCategories.size, categories.size)
             for (i in 0 until min) {
                 categories[i] = sortedCategories[i]
@@ -62,7 +64,7 @@ class ClassificationResultsAdapter :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         categories[position].let { category ->
-            holder.bind(category?.categoryName(), category?.score())
+            holder.bind(category?.categoryName(), category?.score(), isTopResult = position == 0)
         }
     }
 
@@ -71,13 +73,20 @@ class ClassificationResultsAdapter :
     inner class ViewHolder(private val binding: ItemClassificationResultBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(label: String?, score: Float?) {
+        fun bind(label: String?, score: Float?, isTopResult: Boolean) {
             with(binding) {
                 tvLabel.text = label ?: NO_VALUE
                 tvScore.text = if (score != null) String.format(
                     "%.2f",
                     score
                 ) else NO_VALUE
+
+                // These are single-label models, so only the top-scoring class is the
+                // actual prediction. Highlight it and dim the lower-ranked rows.
+                val labelColorRes =
+                    if (isTopResult) R.color.bottom_sheet_text_color
+                    else R.color.result_secondary_text_color
+                tvLabel.setTextColor(ContextCompat.getColor(root.context, labelColorRes))
             }
         }
     }
