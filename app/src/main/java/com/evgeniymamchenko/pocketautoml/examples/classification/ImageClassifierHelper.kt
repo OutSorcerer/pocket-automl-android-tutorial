@@ -132,15 +132,27 @@ class ImageClassifierHelper(
                 "Image classifier failed to load model with error: " + e.message
             )
         } catch (e: RuntimeException) {
-            // This occurs if the model being used does not support GPU
-            imageClassifierListener?.onError(
-                "Image classifier failed to initialize. See error logs for " +
-                        "details", GPU_ERROR
-            )
+            // GPU delegate initialization can fail on devices without working GPU
+            // (OpenGL/EGL) support, or for models the GPU delegate can't run (e.g. ones
+            // with dynamic-sized tensors — export with static shapes to use the GPU).
+            // Rather than leaving the app with no classifier, fall back to CPU so
+            // classification keeps working.
             Log.e(
                 TAG,
                 "Image classifier failed to load model with error: " + e.message
             )
+            if (currentDelegate == DELEGATE_GPU) {
+                currentDelegate = DELEGATE_CPU
+                imageClassifierListener?.onError(
+                    "GPU acceleration isn't available. Falling back to CPU.",
+                    GPU_ERROR
+                )
+                setupImageClassifier()
+            } else {
+                imageClassifierListener?.onError(
+                    "Image classifier failed to initialize. See error logs for details."
+                )
+            }
         }
     }
 
