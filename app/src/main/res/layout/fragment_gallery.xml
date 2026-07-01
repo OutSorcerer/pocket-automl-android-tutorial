@@ -45,22 +45,6 @@
                 android:scaleType="fitStart"
                 android:visibility="gone" />
 
-            <VideoView
-                android:id="@+id/videoView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:visibility="gone" />
-
-            <androidx.core.widget.ContentLoadingProgressBar
-                android:id="@+id/progress"
-                style="?android:attr/progressBarStyle"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_centerInParent="true"
-                android:indeterminate="true"
-                android:theme="@style/AppThemeProgressStyle"
-                android:visibility="gone" />
-
         </RelativeLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -20,10 +20,10 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.evgeniymamchenko.pocketautoml.examples.classification.ImageClassifierHelper.Category
 import com.evgeniymamchenko.pocketautoml.examples.classification.R
 import com.evgeniymamchenko.pocketautoml.examples.classification.databinding.ItemClassificationResultBinding
-import com.google.mediapipe.tasks.components.containers.Category
-import com.google.mediapipe.tasks.vision.imageclassifier.ImageClassifierResult
+import java.util.Locale
 
 class ClassificationResultsAdapter :
     RecyclerView.Adapter<ClassificationResultsAdapter.ViewHolder>() {
@@ -34,14 +34,13 @@ class ClassificationResultsAdapter :
     private var categories: MutableList<Category?> = mutableListOf()
     private var adapterSize: Int = 0
 
-    fun updateResults(imageClassifierResult: ImageClassifierResult? = null) {
-        categories = MutableList(adapterSize) { null }
-        if (imageClassifierResult != null) {
-            val sortedCategories = imageClassifierResult.classificationResult()
-                .classifications()[0].categories().sortedByDescending { it.score() }
-            val min = kotlin.math.min(sortedCategories.size, categories.size)
+    /** Accepts the already-sorted, top-k categories from the helper (or null to clear). */
+    fun updateResults(categories: List<Category>?) {
+        this.categories = MutableList(adapterSize) { null }
+        if (categories != null) {
+            val min = kotlin.math.min(categories.size, this.categories.size)
             for (i in 0 until min) {
-                categories[i] = sortedCategories[i]
+                this.categories[i] = categories[i]
             }
         }
     }
@@ -64,7 +63,7 @@ class ClassificationResultsAdapter :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         categories[position].let { category ->
-            holder.bind(category?.categoryName(), category?.score(), isTopResult = position == 0)
+            holder.bind(category?.label, category?.score, isTopResult = position == 0)
         }
     }
 
@@ -77,6 +76,7 @@ class ClassificationResultsAdapter :
             with(binding) {
                 tvLabel.text = label ?: NO_VALUE
                 tvScore.text = if (score != null) String.format(
+                    Locale.US,
                     "%.2f",
                     score
                 ) else NO_VALUE

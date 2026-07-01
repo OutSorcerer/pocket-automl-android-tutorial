@@ -18,6 +18,7 @@ package com.evgeniymamchenko.pocketautoml.examples.classification.fragments
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -29,6 +30,7 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
@@ -40,7 +42,7 @@ import com.evgeniymamchenko.pocketautoml.examples.classification.ImageClassifier
 import com.evgeniymamchenko.pocketautoml.examples.classification.MainViewModel
 import com.evgeniymamchenko.pocketautoml.examples.classification.R
 import com.evgeniymamchenko.pocketautoml.examples.classification.databinding.FragmentCameraBinding
-import com.google.mediapipe.tasks.vision.core.RunningMode
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -67,7 +69,11 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
     private var camera: Camera? = null
     private var cameraProvider: ProcessCameraProvider? = null
 
-    /** Blocking operations are performed using this executor */
+    /**
+     * The model is created and run on this single thread (the LiteRT GPU backend
+     * is bound to its creating thread). The CameraX analyzer also runs on it, so
+     * every classify happens on the same thread the model was created on.
+     */
     private lateinit var backgroundExecutor: ExecutorService
 
 
@@ -82,7 +88,7 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
 
         backgroundExecutor.execute {
             if (imageClassifierHelper.isClosed()) {
-                imageClassifierHelper.setupImageClassifier()
+                imageClassifierHelper.setup()
             }
         }
     }
@@ -94,8 +100,8 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
         viewModel.setMaxResults(imageClassifierHelper.maxResults)
         super.onPause()
 
-        // Close the image classifier and release resources
-        backgroundExecutor.execute { imageClassifierHelper.clearImageClassifier() }
+        // Close the classifier and release resources
+        backgroundExecutor.execute { imageClassifierHelper.close() }
     }
 
     override fun onDestroyView() {
@@ -133,12 +139,12 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
         backgroundExecutor.execute {
             imageClassifierHelper = ImageClassifierHelper(
                 context = requireContext(),
-                runningMode = RunningMode.LIVE_STREAM,
                 currentDelegate = viewModel.currentDelegate,
                 currentModel = viewModel.currentModel,
                 maxResults = viewModel.currentMaxResults,
-                imageClassifierListener = this
+                listener = this
             )
+            imageClassifierHelper.setup()
 
             fragmentCameraBinding.viewFinder.post {
                 // Set up the camera and its use cases
@@ -237,8 +243,8 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
             imageClassifierHelper.maxResults.toString()
 
         backgroundExecutor.execute {
-            imageClassifierHelper.clearImageClassifier()
-            imageClassifierHelper.setupImageClassifier()
+            imageClassifierHelper.close()
+            imageClassifierHelper.setup()
         }
     }
 
@@ -248,7 +254,7 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
             fragmentCameraBinding.viewFinder.display.rotation
     }
 
-    // Declare and bind preview, capture and analysis use cases
+    // Declare and bind preview and analysis use cases
     @SuppressLint("UnsafeOptInUsageError")
     private fun bindCameraUseCases() {
 
@@ -271,12 +277,10 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                 .build()
-                // The analyzer can then be assigned to the instance
+                // The analyzer runs on backgroundExecutor — the same thread the
+                // model was created on — so classify() satisfies GPU thread affinity.
                 .also {
-                    it.setAnalyzer(
-                        backgroundExecutor,
-                        imageClassifierHelper::classifyLiveStreamFrame
-                    )
+                    it.setAnalyzer(backgroundExecutor, ::classifyImageProxy)
                 }
 
         // Must unbind the use-cases before rebinding them
@@ -296,6 +300,31 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
         }
     }
 
+    // Converts a camera frame to a Bitmap and classifies it. Runs on backgroundExecutor.
+    private fun classifyImageProxy(imageProxy: ImageProxy) {
+        val bitmap = Bitmap.createBitmap(
+            imageProxy.width, imageProxy.height, Bitmap.Config.ARGB_8888
+        )
+        bitmap.copyPixelsFromBuffer(imageProxy.planes[0].buffer)
+        val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+        imageProxy.close()
+
+        val result = imageClassifierHelper.classify(bitmap, rotationDegrees) ?: return
+        showResult(result)
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun showResult(result: ImageClassifierHelper.ResultBundle) {
+        activity?.runOnUiThread {
+            if (_fragmentCameraBinding != null) {
+                classificationResultsAdapter.updateResults(result.categories)
+                classificationResultsAdapter.notifyDataSetChanged()
+                fragmentCameraBinding.bottomSheetLayout.inferenceTimeVal.text =
+                    String.format(Locale.US, "%d ms", result.inferenceTime)
+            }
+        }
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     override fun onError(error: String, errorCode: Int) {
         activity?.runOnUiThread {
@@ -307,23 +336,6 @@ class CameraFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
                 fragmentCameraBinding.bottomSheetLayout.spinnerDelegate.setSelection(
                     ImageClassifierHelper.DELEGATE_CPU, false
                 )
-            }
-        }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    override fun onResults(
-        resultBundle: ImageClassifierHelper.ResultBundle
-    ) {
-        activity?.runOnUiThread {
-            if (_fragmentCameraBinding != null) {
-                // Show result on bottom sheet
-                classificationResultsAdapter.updateResults(
-                    resultBundle.results.first()
-                )
-                classificationResultsAdapter.notifyDataSetChanged()
-                fragmentCameraBinding.bottomSheetLayout.inferenceTimeVal.text =
-                    String.format("%d ms", resultBundle.inferenceTime)
             }
         }
     }

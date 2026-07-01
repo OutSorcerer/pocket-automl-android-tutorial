@@ -21,7 +21,6 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
@@ -36,39 +35,32 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.evgeniymamchenko.pocketautoml.examples.classification.ImageClassifierHelper
 import com.evgeniymamchenko.pocketautoml.examples.classification.MainViewModel
 import com.evgeniymamchenko.pocketautoml.examples.classification.databinding.FragmentGalleryBinding
-import com.google.mediapipe.tasks.vision.core.RunningMode
+import java.util.Locale
 import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 
 class GalleryFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
     enum class MediaType {
-        IMAGE, VIDEO, UNKNOWN
+        IMAGE, UNKNOWN
     }
 
     private var _fragmentGalleryBinding: FragmentGalleryBinding? = null
     private val fragmentGalleryBinding
         get() = _fragmentGalleryBinding!!
     private val viewModel: MainViewModel by activityViewModels()
-    private lateinit var imageClassifierHelper: ImageClassifierHelper
     private val classificationResultsAdapter by lazy {
         ClassificationResultsAdapter().apply {
             updateAdapterSize(viewModel.currentMaxResults)
         }
     }
 
-    /** Blocking ML operations are performed using this executor */
-    private lateinit var backgroundExecutor: ScheduledExecutorService
-
     private val getContent =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
             // Handle the returned Uri
             uri?.let { mediaUri ->
-                when (val mediaType = loadMediaType(mediaUri)) {
+                when (loadMediaType(mediaUri)) {
                     MediaType.IMAGE -> runClassificationOnImage(mediaUri)
-                    MediaType.VIDEO -> runClassificationOnVideo(mediaUri)
                     MediaType.UNKNOWN -> {
-                        updateDisplayView(mediaType)
+                        updateDisplayView(MediaType.UNKNOWN)
                         Toast.makeText(
                             requireContext(),
                             "Unsupported data type.",
@@ -90,10 +82,15 @@ class GalleryFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
         return fragmentGalleryBinding.root
     }
 
+    override fun onDestroyView() {
+        _fragmentGalleryBinding = null
+        super.onDestroyView()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fragmentGalleryBinding.fabGetContent.setOnClickListener {
-            getContent.launch(arrayOf("image/*", "video/*"))
+            getContent.launch(arrayOf("image/*"))
             updateDisplayView(MediaType.UNKNOWN)
         }
         with(fragmentGalleryBinding.recyclerviewResults) {
@@ -143,8 +140,7 @@ class GalleryFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
                 }
             }
 
-        // When clicked, change the underlying model used for image
-        // classification
+        // When clicked, change the underlying model used for image classification
         fragmentGalleryBinding.bottomSheetLayout.spinnerModel.setSelection(
             viewModel.currentModel, false
         )
@@ -163,13 +159,9 @@ class GalleryFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
             }
     }
 
-    // Update the values displayed in the bottom sheet. Reset classifier.
+    // Update the values displayed in the bottom sheet, and clear any shown result.
     @SuppressLint("NotifyDataSetChanged")
     private fun updateControlsUi() {
-        if (fragmentGalleryBinding.videoView.isPlaying) {
-            fragmentGalleryBinding.videoView.stopPlayback()
-        }
-        fragmentGalleryBinding.videoView.visibility = View.GONE
         fragmentGalleryBinding.imageResult.visibility = View.GONE
         fragmentGalleryBinding.bottomSheetLayout.maxResultsValue.text =
             viewModel.currentMaxResults.toString()
@@ -179,141 +171,75 @@ class GalleryFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
         classificationResultsAdapter.notifyDataSetChanged()
     }
 
-    // Load and display the image.
+    // Load, display, and classify the selected image.
+    @SuppressLint("NotifyDataSetChanged")
     private fun runClassificationOnImage(uri: Uri) {
         setUiEnabled(false)
-        backgroundExecutor = Executors.newSingleThreadScheduledExecutor()
         updateDisplayView(MediaType.IMAGE)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val source = ImageDecoder.createSource(
-                requireActivity().contentResolver, uri
-            )
-            ImageDecoder.decodeBitmap(source)
-        } else {
-            MediaStore.Images.Media.getBitmap(
-                requireActivity().contentResolver, uri
-            )
-        }.copy(Bitmap.Config.ARGB_8888, true)?.let { bitmap ->
-            fragmentGalleryBinding.imageResult.setImageBitmap(bitmap)
 
-            // Run image classification on the input image
-            backgroundExecutor.execute {
-
-                imageClassifierHelper = ImageClassifierHelper(
-                    context = requireContext(),
-                    runningMode = RunningMode.IMAGE,
-                    currentModel = viewModel.currentModel,
-                    currentDelegate = viewModel.currentDelegate,
-                    maxResults = viewModel.currentMaxResults,
-                    imageClassifierListener = this
-                )
-                imageClassifierHelper.classifyImage(bitmap)
-                    ?.let { resultBundle ->
-                        activity?.runOnUiThread {
-                            classificationResultsAdapter.updateResults(
-                                resultBundle.results.first()
-                            )
-                            classificationResultsAdapter.notifyDataSetChanged()
-                            setUiEnabled(true)
-                            fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.text =
-                                String.format(
-                                    "%d ms", resultBundle.inferenceTime
-                                )
-                        }
-                    } ?: run {
-                    Log.e(TAG, "Error running image classification.")
-                }
-
-                imageClassifierHelper.clearImageClassifier()
-
-                // Release this single-use executor's worker thread now that the
-                // image has been classified. A fresh executor is created per
-                // selection, so leaving it running would leak a thread each time.
-                backgroundExecutor.shutdown()
-            }
+        val bitmap = decodeBitmap(uri)
+        if (bitmap == null) {
+            Log.e(TAG, "Unable to decode the selected image.")
+            setUiEnabled(true)
+            updateDisplayView(MediaType.UNKNOWN)
+            return
         }
-    }
+        fragmentGalleryBinding.imageResult.setImageBitmap(bitmap)
 
-    // Load and display the video.
-    private fun runClassificationOnVideo(uri: Uri) {
-        setUiEnabled(false)
-        updateDisplayView(MediaType.VIDEO)
-
-        with(fragmentGalleryBinding.videoView) {
-            setVideoURI(uri)
-            // mute the audio
-            setOnPreparedListener { it.setVolume(0f, 0f) }
-            requestFocus()
-        }
-
-        backgroundExecutor = Executors.newSingleThreadScheduledExecutor()
-        backgroundExecutor.execute {
-
-            activity?.runOnUiThread {
-                fragmentGalleryBinding.videoView.visibility = View.GONE
-                fragmentGalleryBinding.progress.visibility = View.VISIBLE
-            }
-
-            imageClassifierHelper = ImageClassifierHelper(
+        // Run inference off the UI thread. A fresh single-thread executor is used
+        // per selection so the model is created and run on the same thread; it is
+        // shut down once classification finishes.
+        val executor = Executors.newSingleThreadExecutor()
+        executor.execute {
+            val helper = ImageClassifierHelper(
                 context = requireContext(),
-                runningMode = RunningMode.VIDEO,
                 currentModel = viewModel.currentModel,
                 currentDelegate = viewModel.currentDelegate,
                 maxResults = viewModel.currentMaxResults,
-                imageClassifierListener = this
+                listener = this
             )
+            helper.setup()
+            val result = helper.classify(bitmap, rotationDegrees = 0)
+            helper.close()
+            executor.shutdown()
 
-            imageClassifierHelper.classifyVideoFile(uri, VIDEO_INTERVAL_MS)
-                ?.let { resultBundle ->
-                    activity?.runOnUiThread {
-                        displayVideoResult(resultBundle)
-                    }
-                } ?: run {
-                Log.e(TAG, "Error running image classification.")
+            activity?.runOnUiThread {
+                if (_fragmentGalleryBinding == null) return@runOnUiThread
+                setUiEnabled(true)
+                if (result != null) {
+                    classificationResultsAdapter.updateResults(result.categories)
+                    classificationResultsAdapter.notifyDataSetChanged()
+                    fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.text =
+                        String.format(Locale.US, "%d ms", result.inferenceTime)
+                } else {
+                    Log.e(TAG, "Error running image classification.")
+                }
             }
-
-            imageClassifierHelper.clearImageClassifier()
         }
     }
 
-    // Setup and display the video.
-    private fun displayVideoResult(result: ImageClassifierHelper.ResultBundle) {
-
-        fragmentGalleryBinding.videoView.visibility = View.VISIBLE
-        fragmentGalleryBinding.progress.visibility = View.GONE
-
-        fragmentGalleryBinding.videoView.start()
-        val videoStartTimeMs = SystemClock.uptimeMillis()
-
-        backgroundExecutor.scheduleAtFixedRate(
-            {
-                activity?.runOnUiThread {
-                    val videoElapsedTimeMs =
-                        SystemClock.uptimeMillis() - videoStartTimeMs
-                    val resultIndex =
-                        videoElapsedTimeMs.div(VIDEO_INTERVAL_MS).toInt()
-
-                    if (resultIndex >= result.results.size || fragmentGalleryBinding.videoView.visibility == View.GONE) {
-                        setUiEnabled(true)
-                        backgroundExecutor.shutdown()
-                    } else {
-                        classificationResultsAdapter.updateResults(result.results[resultIndex])
-                        classificationResultsAdapter.notifyDataSetChanged()
-                        setUiEnabled(false)
-
-                        fragmentGalleryBinding.bottomSheetLayout.inferenceTimeVal.text =
-                            String.format("%d ms", result.inferenceTime)
-                    }
-                }
-            }, 0, VIDEO_INTERVAL_MS, TimeUnit.MILLISECONDS
-        )
+    private fun decodeBitmap(uri: Uri): Bitmap? {
+        return try {
+            val decoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ImageDecoder.decodeBitmap(
+                    ImageDecoder.createSource(requireActivity().contentResolver, uri)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(requireActivity().contentResolver, uri)
+            }
+            // Convert to a mutable software ARGB_8888 bitmap so getPixels() works
+            // (ImageDecoder may return a hardware bitmap).
+            decoded.copy(Bitmap.Config.ARGB_8888, true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to decode image: ${e.message}", e)
+            null
+        }
     }
 
     private fun updateDisplayView(mediaType: MediaType) {
         fragmentGalleryBinding.imageResult.visibility =
             if (mediaType == MediaType.IMAGE) View.VISIBLE else View.GONE
-        fragmentGalleryBinding.videoView.visibility =
-            if (mediaType == MediaType.VIDEO) View.VISIBLE else View.GONE
         fragmentGalleryBinding.tvPlaceholder.visibility =
             if (mediaType == MediaType.UNKNOWN) View.VISIBLE else View.GONE
     }
@@ -321,37 +247,22 @@ class GalleryFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
     // Check the type of media that user selected.
     private fun loadMediaType(uri: Uri): MediaType {
         val mimeType = context?.contentResolver?.getType(uri)
-        mimeType?.let {
-            if (mimeType.startsWith("image")) return MediaType.IMAGE
-            if (mimeType.startsWith("video")) return MediaType.VIDEO
-        }
-
+        if (mimeType?.startsWith("image") == true) return MediaType.IMAGE
         return MediaType.UNKNOWN
     }
 
     private fun setUiEnabled(enabled: Boolean) {
         fragmentGalleryBinding.fabGetContent.isEnabled = enabled
-        fragmentGalleryBinding.bottomSheetLayout.spinnerModel.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.maxResultsMinus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.maxResultsPlus.isEnabled =
-            enabled
-        fragmentGalleryBinding.bottomSheetLayout.spinnerDelegate.isEnabled =
-            enabled
-    }
-
-    private fun classifyingError() {
-        activity?.runOnUiThread {
-            fragmentGalleryBinding.progress.visibility = View.GONE
-            setUiEnabled(true)
-            updateDisplayView(MediaType.UNKNOWN)
-        }
+        fragmentGalleryBinding.bottomSheetLayout.spinnerModel.isEnabled = enabled
+        fragmentGalleryBinding.bottomSheetLayout.maxResultsMinus.isEnabled = enabled
+        fragmentGalleryBinding.bottomSheetLayout.maxResultsPlus.isEnabled = enabled
+        fragmentGalleryBinding.bottomSheetLayout.spinnerDelegate.isEnabled = enabled
     }
 
     override fun onError(error: String, errorCode: Int) {
-        classifyingError()
         activity?.runOnUiThread {
+            if (_fragmentGalleryBinding == null) return@runOnUiThread
+            setUiEnabled(true)
             Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
             if (errorCode == ImageClassifierHelper.GPU_ERROR) {
                 fragmentGalleryBinding.bottomSheetLayout.spinnerDelegate.setSelection(
@@ -362,14 +273,7 @@ class GalleryFragment : Fragment(), ImageClassifierHelper.ClassifierListener {
         }
     }
 
-    override fun onResults(resultBundle: ImageClassifierHelper.ResultBundle) {
-        // no-op
-    }
-
     companion object {
         private const val TAG = "GalleryFragment"
-
-        // Value used to get frames at specific intervals for inference (e.g. every 300ms)
-        private const val VIDEO_INTERVAL_MS = 300L
     }
 }

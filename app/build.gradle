@@ -39,7 +39,7 @@ android {
     }
 }
 
-// Download the default MediaPipe models into the assets directory. The
+// Download the default EfficientNet-Lite models into the assets directory. The
 // Pocket AutoML model (Kittens-or-Puppies.tflite) is committed directly, so it
 // is not downloaded here.
 project.ext.ASSET_DIR = projectDir.toString() + '/src/main/assets'
@@ -61,8 +61,18 @@ dependencies {
     implementation libs.androidx.camera.lifecycle
     implementation libs.androidx.camera.view
 
-    // MediaPipe Tasks Vision (image classification)
-    implementation libs.mediapipe.tasks.vision
+    // LiteRT (formerly TensorFlow Lite): CompiledModel runtime + GPU acceleration,
+    // plus the support/metadata libraries for preprocessing and reading embedded
+    // labels. The mutual excludes avoid duplicate-class clashes between the
+    // *-api split modules (mirrors the official LiteRT sample).
+    implementation(libs.litert) {
+        exclude group: 'com.google.ai.edge.litert', module: 'litert-support'
+        exclude group: 'com.google.ai.edge.litert', module: 'litert-support-api'
+    }
+    implementation(libs.litert.support) {
+        exclude group: 'com.google.ai.edge.litert', module: 'litert-api'
+    }
+    implementation libs.litert.metadata
 
     // Testing
     testImplementation libs.junit

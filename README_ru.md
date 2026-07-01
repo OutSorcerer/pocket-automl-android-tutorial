@@ -11,7 +11,7 @@
 
 Это руководство основано на [примере классификации изображений MediaPipe для Android](https://github.com/google-ai-edge/mediapipe-samples/tree/main/examples/image_classification/android).
 
-> **Примечание:** Приложение было модернизировано в 2026 году — теперь оно написано на **Kotlin** и использует [**MediaPipe Tasks**](https://ai.google.dev/edge/mediapipe/solutions/vision/image_classifier) для инференса, [CameraX](https://developer.android.com/training/camerax) для камеры и современную сборку Gradle/AGP. Предыдущая версия (Java, Camera2, ныне устаревшая библиотека TensorFlow Lite Task/Support) сохранена в теге [`pre-modernization`](https://github.com/OutSorcerer/pocket-automl-android-tutorial/tree/pre-modernization).
+> **Примечание:** Приложение было модернизировано в 2026 году — теперь оно написано на **Kotlin** и использует [**LiteRT**](https://ai.google.dev/edge/litert) (API `CompiledModel`) для инференса, [CameraX](https://developer.android.com/training/camerax) для камеры и современную сборку Gradle/AGP. Предыдущая версия (Java, Camera2 и устаревшая TensorFlow Lite Task Library) сохранена в теге [`pre-modernization`](https://github.com/OutSorcerer/pocket-automl-android-tutorial/tree/pre-modernization).
 
 > Если у Вас возникли трудности при следовании этому руководству, напишите мне (создателю Pocket AutoML) на [электронную почту](mailto:pocket-automl@evgeniymamchenko.com) или создайте [issue](https://github.com/OutSorcerer/pocket-automl-android-tutorial/issues) на GitHub.
 
@@ -65,7 +65,7 @@ git clone https://github.com/OutSorcerer/pocket-automl-android-tutorial
 
 <img src="images/classifydemo_img1.png" />
 
-Приложение выполняет инференс с помощью [`ImageClassifier` из MediaPipe Tasks](https://ai.google.dev/edge/mediapipe/solutions/vision/image_classifier). MediaPipe читает названия классов и параметры нормализации входных данных прямо из метаданных, встроенных в `.tflite` модель, поэтому отдельный файл с метками во время работы не нужен (см. Шаг 6).
+Приложение выполняет инференс с помощью [API `CompiledModel` из LiteRT](https://ai.google.dev/edge/litert). На GPU принудительно используется полная точность **FP32** (`GpuOptions` из LiteRT) — именно это позволяет модели Pocket AutoML на базе EfficientNet работать на GPU без появления NaN в результатах. Названия классов и параметры нормализации входных данных (mean/std) читаются прямо из метаданных, встроенных в `.tflite` модель, поэтому отдельный файл с метками во время работы не нужен (см. Шаг 6).
 
 ## Шаг 4. Постройте проект в Android Studio
 

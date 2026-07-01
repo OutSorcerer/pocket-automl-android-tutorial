@@ -18,349 +18,243 @@ package com.evgeniymamchenko.pocketautoml.examples.classification
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
-import android.net.Uri
+import android.graphics.Color
+import android.graphics.Matrix
 import android.os.SystemClock
 import android.util.Log
-import androidx.annotation.VisibleForTesting
-import androidx.camera.core.ImageProxy
-import com.google.mediapipe.framework.image.BitmapImageBuilder
-import com.google.mediapipe.framework.image.MPImage
-import com.google.mediapipe.tasks.core.BaseOptions
-import com.google.mediapipe.tasks.core.Delegate
-import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions
-import com.google.mediapipe.tasks.vision.core.RunningMode
-import com.google.mediapipe.tasks.vision.imageclassifier.ImageClassifier
-import com.google.mediapipe.tasks.vision.imageclassifier.ImageClassifierResult
+import com.google.ai.edge.litert.Accelerator
+import com.google.ai.edge.litert.CompiledModel
+import org.tensorflow.lite.support.metadata.MetadataExtractor
+import org.tensorflow.lite.support.metadata.schema.NormalizationOptions
+import org.tensorflow.lite.support.metadata.schema.ProcessUnitOptions
+import java.nio.ByteBuffer
 
+/**
+ * Runs image classification with the LiteRT [CompiledModel] API.
+ *
+ * Why LiteRT and not MediaPipe Tasks: Pocket AutoML exports a full EfficientNet
+ * (Swish + Squeeze-Excite) classifier. MediaPipe Tasks runs the GPU in FP16 with
+ * no way to opt out, and those ops overflow FP16 → NaN scores. LiteRT lets us
+ * force [CompiledModel.GpuOptions.Precision.FP32], so the GPU produces correct
+ * results.
+ *
+ * Threading: the GPU backend is bound to the thread that creates the model, so
+ * EVERY call on a given instance ([setup], [classify], [close]) must run on the
+ * same single dedicated thread. Callers own that thread (a single-thread
+ * ExecutorService); this class does no threading of its own.
+ */
 class ImageClassifierHelper(
-    var maxResults: Int = MAX_RESULTS_DEFAULT,
-    var currentDelegate: Int = DELEGATE_CPU,
-    var currentModel: Int = MODEL_POCKET_AUTOML,
-    var runningMode: RunningMode = RunningMode.IMAGE,
     val context: Context,
-    val imageClassifierListener: ClassifierListener? = null
+    var currentModel: Int = MODEL_POCKET_AUTOML,
+    var currentDelegate: Int = DELEGATE_CPU,
+    var maxResults: Int = MAX_RESULTS_DEFAULT,
+    val listener: ClassifierListener? = null,
 ) {
 
-    // For this example this needs to be a var so it can be reset on changes. If the ImageClassifier
-    // will not change, a lazy val would be preferable.
-    private var imageClassifier: ImageClassifier? = null
+    private var model: CompiledModel? = null
+    private var labels: List<String> = emptyList()
 
-    init {
-        setupImageClassifier()
+    // Input geometry/normalization, resolved from the model when it is loaded.
+    private var inputWidth: Int = DEFAULT_INPUT_SIZE
+    private var inputHeight: Int = DEFAULT_INPUT_SIZE
+    // mean/std may hold a single broadcast value or one value per RGB channel.
+    private var inputMean: FloatArray = floatArrayOf(0f)
+    private var inputStd: FloatArray = floatArrayOf(1f)
+
+    fun isClosed(): Boolean = model == null
+
+    /** Releases the underlying model. Must be called on the owner thread. */
+    fun close() {
+        model?.close()
+        model = null
     }
 
-    // Classifier must be closed when creating a new one to avoid returning results to a
-    // non-existent object
-    fun clearImageClassifier() {
-        imageClassifier?.close()
-        imageClassifier = null
-    }
+    /**
+     * Creates the [CompiledModel] for the current model + delegate. On GPU,
+     * forces FP32 to avoid FP16 overflow (NaN). Falls back to CPU if the GPU
+     * delegate can't be created (e.g. a device without GPU support). Must be
+     * called on the owner thread.
+     */
+    fun setup() {
+        close()
 
-    // Return running status of image classifier helper
-    fun isClosed(): Boolean {
-        return imageClassifier == null
-    }
-
-    // Initialize the image classifier using current settings on the
-    // thread that is using it. CPU can be used with detectors
-    // that are created on the main thread and used on a background thread, but
-    // the GPU delegate needs to be used on the thread that initialized the
-    // classifier
-    fun setupImageClassifier() {
-        val baseOptionsBuilder = BaseOptions.builder()
-        when (currentDelegate) {
-            DELEGATE_CPU -> {
-                baseOptionsBuilder.setDelegate(Delegate.CPU)
-            }
-
-            DELEGATE_GPU -> {
-                baseOptionsBuilder.setDelegate(Delegate.GPU)
-            }
-        }
-
-        val modelName =
-            when (currentModel) {
-                MODEL_POCKET_AUTOML -> "Kittens-or-Puppies.tflite"
-                MODEL_EFFICIENTNETV0 -> "efficientnet-lite0.tflite"
-                MODEL_EFFICIENTNETV2 -> "efficientnet-lite2.tflite"
-                else -> "Kittens-or-Puppies.tflite"
-            }
-
-        baseOptionsBuilder.setModelAssetPath(modelName)
-
-        // Check if runningMode is consistent with imageClassifierListener
-        when (runningMode) {
-            RunningMode.LIVE_STREAM -> {
-                if (imageClassifierListener == null) {
-                    throw IllegalStateException(
-                        "imageClassifierListener must be set when runningMode is LIVE_STREAM."
-                    )
-                }
-            }
-
-            else -> {
-                // no-op
-            }
-        }
-
+        val fileName = modelFileName(currentModel)
         try {
-            val baseOptions = baseOptionsBuilder.build()
-            val optionsBuilder =
-                ImageClassifier.ImageClassifierOptions.builder()
-                    // No score threshold: these are single-label (softmax) models, so we
-                    // present the top-N categories by score (top-k) and let MaxResults
-                    // bound N. A score floor would suppress valid predictions when the
-                    // probability mass is spread over many classes.
-                    .setMaxResults(maxResults)
-                    .setRunningMode(runningMode)
-                    .setBaseOptions(baseOptions)
-
-            if (runningMode == RunningMode.LIVE_STREAM) {
-                optionsBuilder.setResultListener(this::returnLivestreamResult)
-                optionsBuilder.setErrorListener(this::returnLivestreamError)
+            // Read labels and input geometry straight from the model's embedded
+            // metadata, so there is no separate labels file to manage at runtime.
+            context.assets.open(fileName).use { stream ->
+                val extractor = MetadataExtractor(ByteBuffer.wrap(stream.readBytes()))
+                labels = readLabels(extractor)
+                readInputShape(extractor)
+                val (mean, std) =
+                    readNormalization(extractor) ?: defaultNormalization(currentModel)
+                inputMean = mean
+                inputStd = std
             }
-            val options = optionsBuilder.build()
-            imageClassifier =
-                ImageClassifier.createFromOptions(context, options)
-        } catch (e: IllegalStateException) {
-            imageClassifierListener?.onError(
-                "Image classifier failed to initialize. See error logs for details"
-            )
-            Log.e(
-                TAG,
-                "Image classifier failed to load model with error: " + e.message
-            )
-        } catch (e: RuntimeException) {
-            // GPU delegate initialization can fail on devices without working GPU
-            // (OpenGL/EGL) support, or for models the GPU delegate can't run (e.g. ones
-            // with dynamic-sized tensors — export with static shapes to use the GPU).
-            // Rather than leaving the app with no classifier, fall back to CPU so
-            // classification keeps working.
-            Log.e(
-                TAG,
-                "Image classifier failed to load model with error: " + e.message
-            )
+
+            val accelerator =
+                if (currentDelegate == DELEGATE_GPU) Accelerator.GPU else Accelerator.CPU
+            val options = CompiledModel.Options(accelerator)
+            if (accelerator == Accelerator.GPU) {
+                // The whole reason we use LiteRT instead of MediaPipe Tasks: force
+                // full precision so EfficientNet's Swish/SE ops don't overflow FP16.
+                options.gpuOptions = CompiledModel.GpuOptions(
+                    precision = CompiledModel.GpuOptions.Precision.FP32
+                )
+            }
+            model = CompiledModel.create(context.assets, fileName, options, null)
+            Log.i(TAG, "Created CompiledModel: $fileName, delegate=$currentDelegate")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create CompiledModel ($fileName): ${e.message}", e)
             if (currentDelegate == DELEGATE_GPU) {
+                // GPU couldn't be initialized on this device; fall back to CPU so
+                // classification keeps working.
                 currentDelegate = DELEGATE_CPU
-                imageClassifierListener?.onError(
+                listener?.onError(
                     "GPU acceleration isn't available. Falling back to CPU.",
                     GPU_ERROR
                 )
-                setupImageClassifier()
+                setup()
             } else {
-                imageClassifierListener?.onError(
+                listener?.onError(
                     "Image classifier failed to initialize. See error logs for details."
                 )
             }
         }
     }
 
-    // Runs image classification on live streaming cameras frame-by-frame and
-    // returns the results asynchronously to the caller.
-    fun classifyLiveStreamFrame(imageProxy: ImageProxy) {
-        if (runningMode != RunningMode.LIVE_STREAM) {
-            throw IllegalArgumentException(
-                "Attempting to call classifyLiveStreamFrame" +
-                        " while not using RunningMode.LIVE_STREAM"
-            )
-        }
+    /**
+     * Classifies a single [bitmap], rotating it [rotationDegrees] clockwise to
+     * upright first. Returns the top results (sorted by score), or null on error.
+     * Must be called on the owner thread.
+     */
+    fun classify(bitmap: Bitmap, rotationDegrees: Int): ResultBundle? {
+        val currentModel = model ?: return null
+        val startTime = SystemClock.uptimeMillis()
 
-        val frameTime = SystemClock.uptimeMillis()
-        val bitmapBuffer =
-            Bitmap.createBitmap(
-                imageProxy.width,
-                imageProxy.height,
-                Bitmap.Config.ARGB_8888
-            )
+        val input = preprocess(bitmap, rotationDegrees)
 
-        imageProxy.use {
-            bitmapBuffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer)
+        val inputBuffers = currentModel.createInputBuffers()
+        val outputBuffers = currentModel.createOutputBuffers()
+        try {
+            inputBuffers[0].writeFloat(input)
+            currentModel.run(inputBuffers, outputBuffers)
+            val scores = outputBuffers[0].readFloat()
+
+            val labelList =
+                if (labels.size == scores.size) labels
+                else scores.indices.map { "Class $it" }
+
+            val categories = labelList.zip(scores.toList())
+                .map { Category(label = it.first, score = it.second) }
+                .sortedByDescending { it.score }
+                .take(maxResults)
+
+            return ResultBundle(categories, SystemClock.uptimeMillis() - startTime)
+        } catch (e: Exception) {
+            Log.e(TAG, "Classification failed: ${e.message}", e)
+            listener?.onError("Image classifier failed to classify.")
+            return null
+        } finally {
+            inputBuffers.forEach { it.close() }
+            outputBuffers.forEach { it.close() }
         }
-        imageProxy.close()
-        val mpImage = BitmapImageBuilder(bitmapBuffer).build()
-        classifyAsync(mpImage, imageProxy.imageInfo.rotationDegrees, frameTime)
     }
 
-    // Run image classification on a live-stream frame using the MediaPipe Image Classifier API
-    @VisibleForTesting
-    fun classifyAsync(mpImage: MPImage, imageDegree: Int, frameTime: Long) {
-        val imageProcessingOptions =
-            ImageProcessingOptions.builder().setRotationDegrees(imageDegree)
-                .build()
-        // As we're using running mode LIVE_STREAM, the classification result will
-        // be returned in returnLivestreamResult function
-        imageClassifier?.classifyAsync(
-            mpImage,
-            imageProcessingOptions,
-            frameTime
+    /** Scales to the model's input size, rotates upright, and normalizes to NHWC float. */
+    private fun preprocess(bitmap: Bitmap, rotationDegrees: Int): FloatArray {
+        val scaled = Bitmap.createScaledBitmap(bitmap, inputWidth, inputHeight, true)
+        val upright = rotate(scaled, rotationDegrees)
+        return normalize(upright, inputMean, inputStd)
+    }
+
+    private fun rotate(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
+        if (rotationDegrees % 360 == 0) return bitmap
+        val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+        return Bitmap.createBitmap(
+            bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
         )
     }
 
-    // Accepted a Bitmap and runs image classification inference on it to
-    // return results back to the caller
-    fun classifyImage(image: Bitmap): ResultBundle? {
-        if (runningMode != RunningMode.IMAGE) {
-            throw IllegalArgumentException(
-                "Attempting to call classifyImage" +
-                        " while not using RunningMode.IMAGE"
-            )
+    private fun normalize(bitmap: Bitmap, mean: FloatArray, std: FloatArray): FloatArray {
+        val width = bitmap.width
+        val height = bitmap.height
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+        val out = FloatArray(pixels.size * 3)
+        for (i in pixels.indices) {
+            val pixel = pixels[i]
+            val idx = i * 3
+            out[idx] = (Color.red(pixel) - mean.channel(0)) / std.channel(0)
+            out[idx + 1] = (Color.green(pixel) - mean.channel(1)) / std.channel(1)
+            out[idx + 2] = (Color.blue(pixel) - mean.channel(2)) / std.channel(2)
         }
-
-        if (imageClassifier == null) return null
-
-        // Inference time is the difference between the system time at the start and finish of the
-        // process
-        val startTime = SystemClock.uptimeMillis()
-
-        // Convert the input Bitmap object to an MPImage object to run inference
-        val mpImage = BitmapImageBuilder(image).build()
-
-        // Run image classification using MediaPipe Image Classifier API
-        imageClassifier?.classify(mpImage)?.also { classificationResults ->
-            val inferenceTimeMs = SystemClock.uptimeMillis() - startTime
-            return ResultBundle(listOf(classificationResults), inferenceTimeMs)
-        }
-
-        // If imageClassifier?.classify() returns null, this is likely an error. Returning null
-        // to indicate this.
-        imageClassifierListener?.onError(
-            "Image classifier failed to classify."
-        )
-        return null
+        return out
     }
 
-    // Accepts the URI for a video file loaded from the user's gallery and attempts to run
-    // image classification inference on the video. This process will evaluate
-    // every frame in the video and attach the results to a bundle that will
-    // be returned.
-    fun classifyVideoFile(
-        videoUri: Uri,
-        inferenceIntervalMs: Long
-    ): ResultBundle? {
-        if (runningMode != RunningMode.VIDEO) {
-            throw IllegalArgumentException(
-                "Attempting to call classifyVideoFile" +
-                        " while not using RunningMode.VIDEO"
-            )
-        }
+    // A length-1 mean/std broadcasts to all channels; otherwise it is per-channel.
+    private fun FloatArray.channel(index: Int): Float = if (size == 1) this[0] else this[index]
 
-        if (imageClassifier == null) return null
-
-        // Inference time is the difference between the system time at the start and finish of the
-        // process
-        val startTime = SystemClock.uptimeMillis()
-
-        var didErrorOccurred = false
-
-        // Load frames from the video and run the image classification model.
-        val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(context, videoUri)
-        val videoLengthMs =
-            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                ?.toLong()
-
-        // Note: We need to read width/height from frame instead of getting the width/height
-        // of the video directly because MediaRetriever returns frames that are smaller than the
-        // actual dimension of the video file.
-        val firstFrame = retriever.getFrameAtTime(0)
-        val width = firstFrame?.width
-        val height = firstFrame?.height
-
-        // If the video is invalid, returns a null classification result
-        if ((videoLengthMs == null) || (width == null) || (height == null)) return null
-
-        // Next, we'll get one frame every frameInterval ms, then run
-        // classification on these frames.
-        val resultList = mutableListOf<ImageClassifierResult>()
-        val numberOfFrameToRead = videoLengthMs.div(inferenceIntervalMs)
-
-        for (i in 0..numberOfFrameToRead) {
-            val timestampMs = i * inferenceIntervalMs // ms
-
-            retriever
-                .getFrameAtTime(
-                    timestampMs * 1000, // convert from ms to micro-s
-                    MediaMetadataRetriever.OPTION_CLOSEST
-                )
-                ?.let { frame ->
-                    // Convert the video frame to ARGB_8888 which is required by the MediaPipe
-                    val argb8888Frame =
-                        if (frame.config == Bitmap.Config.ARGB_8888) frame
-                        else frame.copy(Bitmap.Config.ARGB_8888, false)
-
-                    // Convert the input Bitmap object to an MPImage object to run inference
-                    val mpImage = BitmapImageBuilder(argb8888Frame).build()
-
-                    // Run image classification using MediaPipe Image Classifier
-                    // API
-                    imageClassifier?.classifyForVideo(mpImage, timestampMs)
-                        ?.let { classificationResult ->
-                            resultList.add(classificationResult)
-                        }
-                        ?: {
-                            didErrorOccurred = true
-                            imageClassifierListener?.onError(
-                                "ResultBundle could not be " +
-                                        "returned" +
-                                        " in classifyVideoFile"
-                            )
-                        }
+    /**
+     * Reads the input NormalizationOptions (mean/std) embedded in the model
+     * metadata — the same values the model was exported with — so preprocessing
+     * always matches the model. Returns null if the model declares none.
+     */
+    private fun readNormalization(extractor: MetadataExtractor): Pair<FloatArray, FloatArray>? {
+        return try {
+            val tensorMetadata = extractor.getInputTensorMetadata(0) ?: return null
+            for (i in 0 until tensorMetadata.processUnitsLength()) {
+                val unit = tensorMetadata.processUnits(i) ?: continue
+                if (unit.optionsType().toInt() == ProcessUnitOptions.NormalizationOptions.toInt()) {
+                    val options = unit.options(NormalizationOptions()) as? NormalizationOptions
+                        ?: continue
+                    val mean = FloatArray(options.meanLength()) { options.mean(it) }
+                    val std = FloatArray(options.stdLength()) { options.std(it) }
+                    if (mean.isNotEmpty() && std.isNotEmpty()) return mean to std
                 }
-                ?: run {
-                    didErrorOccurred = true
-                    imageClassifierListener?.onError(
-                        "Frame at specified time could not be" +
-                                " retrieved when classifying in video."
-                    )
-                }
-        }
-
-        retriever.release()
-
-        val inferenceTimePerFrameMs =
-            (SystemClock.uptimeMillis() - startTime).div(numberOfFrameToRead)
-
-        return if (didErrorOccurred) {
+            }
             null
-        } else {
-            ResultBundle(resultList, inferenceTimePerFrameMs)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read normalization from metadata: ${e.message}", e)
+            null
         }
     }
 
-    // MPImage isn't necessary for this example, but the listener requires it
-    private fun returnLivestreamResult(
-        result: ImageClassifierResult,
-        image: MPImage
-    ) {
-
-        val finishTimeMs = SystemClock.uptimeMillis()
-
-        val inferenceTime = finishTimeMs - result.timestampMs()
-
-        imageClassifierListener?.onResults(
-            ResultBundle(
-                listOf(result),
-                inferenceTime
-            )
-        )
+    /** Reads the [1, H, W, C] input shape from the model so we resize correctly. */
+    private fun readInputShape(extractor: MetadataExtractor) {
+        try {
+            val shape = extractor.getInputTensorShape(0)
+            if (shape.size == 4) {
+                inputHeight = shape[1]
+                inputWidth = shape[2]
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read input shape; defaulting to $DEFAULT_INPUT_SIZE", e)
+            inputHeight = DEFAULT_INPUT_SIZE
+            inputWidth = DEFAULT_INPUT_SIZE
+        }
     }
 
-    // Return errors thrown during classification to this
-    // ImageClassifierHelper's caller
-    private fun returnLivestreamError(error: RuntimeException) {
-        imageClassifierListener?.onError(
-            error.message ?: "An unknown error has occurred"
-        )
+    /** Reads class labels from the first associated label file in the metadata. */
+    private fun readLabels(extractor: MetadataExtractor): List<String> {
+        if (!extractor.hasMetadata()) return emptyList()
+        val labelFile = extractor.associatedFileNames?.firstOrNull { it.endsWith(".txt") }
+            ?: return emptyList()
+        return extractor.getAssociatedFile(labelFile).bufferedReader().use { reader ->
+            reader.readLines().filter { it.isNotBlank() }
+        }
     }
 
+    data class Category(val label: String, val score: Float)
 
-    // Wraps results from inference, the time it takes for inference to be
-    // performed.
     data class ResultBundle(
-        val results: List<ImageClassifierResult>,
+        val categories: List<Category>,
         val inferenceTime: Long,
     )
+
+    interface ClassifierListener {
+        fun onError(error: String, errorCode: Int = OTHER_ERROR)
+    }
 
     companion object {
         const val DELEGATE_CPU = 0
@@ -372,11 +266,23 @@ class ImageClassifierHelper(
         const val OTHER_ERROR = 0
         const val GPU_ERROR = 1
 
+        private const val DEFAULT_INPUT_SIZE = 224
         private const val TAG = "ImageClassifierHelper"
-    }
 
-    interface ClassifierListener {
-        fun onError(error: String, errorCode: Int = OTHER_ERROR)
-        fun onResults(resultBundle: ResultBundle)
+        private fun modelFileName(model: Int): String = when (model) {
+            MODEL_EFFICIENTNETV0 -> "efficientnet-lite0.tflite"
+            MODEL_EFFICIENTNETV2 -> "efficientnet-lite2.tflite"
+            else -> "Kittens-or-Puppies.tflite"
+        }
+
+        // Fallback input normalization (mean, std), used only if a model declares no
+        // NormalizationOptions metadata. Pocket AutoML's EfficientNetB0 bakes its own
+        // rescaling/normalization and expects raw [0, 255] pixels (mean 0, std 1);
+        // the EfficientNet-Lite models expect [-1, 1] (mean 127.5, std 127.5).
+        private fun defaultNormalization(model: Int): Pair<FloatArray, FloatArray> = when (model) {
+            MODEL_EFFICIENTNETV0, MODEL_EFFICIENTNETV2 ->
+                floatArrayOf(127.5f) to floatArrayOf(127.5f)
+            else -> floatArrayOf(0f) to floatArrayOf(1f)
+        }
     }
 }
