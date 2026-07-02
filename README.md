@@ -66,8 +66,6 @@ Open the example source code in Android Studio. To do this, open Android
 Studio and select `Open an existing project`, setting the folder to
 `pocket-automl-android-tutorial`
 
-<img src="images/classifydemo_img1.png" />
-
 This app runs inference with the [LiteRT `CompiledModel` API](https://ai.google.dev/edge/litert). On the GPU it forces full **FP32** precision (LiteRT's `GpuOptions`), which is what lets the EfficientNet-based Pocket AutoML model run on the GPU without producing NaN scores. Class labels and the input normalization (mean/std) are read directly from the metadata embedded in the `.tflite` model, so there is no separate labels file to manage at runtime (see Step 6).
 
 ## Step 4. Build the Android Studio project
@@ -75,10 +73,6 @@ This app runs inference with the [LiteRT `CompiledModel` API](https://ai.google.
 Select `Build -> Assemble Project` (you can also click the hammer 🔨 icon in the toolbar or press `Ctrl+F9` / `Cmd+F9`) and check that the project builds successfully.
 Android Studio will prompt you to download any missing components (such as the
 Android SDK and build tools).
-
-<img src="images/classifydemo_img4.png" style="width: 40%" />
-
-<img src="images/classifydemo_img2.png" style="width: 60%" />
 
 ## Step 5. Install and run the app
 
@@ -103,14 +97,6 @@ If you are willing to test the app on an Android emulator
 
 If you want to know more, see [Create and manage virtual devices](https://developer.android.com/studio/run/managing-avds#createavd) in Android documentation.
 
-<img src="images/classifydemo_img5.png" style="width: 60%" />
-
-<img src="images/classifydemo_img6.png" style="width: 70%" />
-
-<img src="images/classifydemo_img7.png" style="width: 40%" />
-
-<img src="images/classifydemo_img8.png" style="width: 80%" />
-
 To test the app, open the app called `Pocket AutoML Predictor` on your device or emulator.
 When you run the app the first time, the app will request permission to access the camera.
 Re-installing the app may require you to uninstall the previous installations.
@@ -127,7 +113,7 @@ Re-installing the app may require you to uninstall the previous installations.
 
 * You will see the predicted class and its probability, with the other classes below. Well done!
 
-  <img src="images/pocket_automl_classify.png" style="width: 50%" />
+  <img src="images/pocket_automl_predictor.png" style="width: 50%" />
 
 ## Next steps
 

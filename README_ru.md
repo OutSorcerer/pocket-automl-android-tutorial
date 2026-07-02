@@ -63,18 +63,12 @@ git clone https://github.com/OutSorcerer/pocket-automl-android-tutorial
 Откройте код примера в Android Studio. Для этого сперва запустите Android Studio,
 выберите `Open an existing project`, затем выберите папку `pocket-automl-android-tutorial`.
 
-<img src="images/classifydemo_img1.png" />
-
 Приложение выполняет инференс с помощью [API `CompiledModel` из LiteRT](https://ai.google.dev/edge/litert). На GPU принудительно используется полная точность **FP32** (`GpuOptions` из LiteRT) — именно это позволяет модели Pocket AutoML на базе EfficientNet работать на GPU без появления NaN в результатах. Названия классов и параметры нормализации входных данных (mean/std) читаются прямо из метаданных, встроенных в `.tflite` модель, поэтому отдельный файл с метками во время работы не нужен (см. Шаг 6).
 
 ## Шаг 4. Постройте проект в Android Studio
 
 Выберите `Build -> Assemble Project` (также можно нажать на значок молотка 🔨 на панели инструментов или клавиши `Ctrl+F9` / `Cmd+F9`) и убедитесь, что проект успешно строится. 
 Android Studio предложит скачать отсутствующие компоненты (например, Android SDK и инструменты сборки).
-
-<img src="images/classifydemo_img4.png" style="width: 40%" />
-
-<img src="images/classifydemo_img2.png" style="width: 60%" />
 
 ## Шаг 5. Установите и запустите приложение
 
@@ -99,14 +93,6 @@ Android Studio предложит скачать отсутствующие ко
 
 Если Вы хотите узнать больше, см. [Create and manage virtual devices](https://developer.android.com/studio/run/managing-avds#createavd) в документации Android.
 
-<img src="images/classifydemo_img5.png" style="width: 60%" />
-
-<img src="images/classifydemo_img6.png" style="width: 70%" />
-
-<img src="images/classifydemo_img7.png" style="width: 40%" />
-
-<img src="images/classifydemo_img8.png" style="width: 80%" />
-
 Чтобы протестировать приложение, откройте приложение под названием `Pocket AutoML Predictor` на Вашем устройстве или эмуляторе.
 Когда Вы запускаете приложение впервые, оно запросит доступ к камере.
 Переустановка приложения может потребовать удаление предыдущих его установок.
@@ -123,7 +109,7 @@ Android Studio предложит скачать отсутствующие ко
 
 * Вы увидите предсказанный класс и соответствующую ему вероятность, а ниже — вероятности других классов. Отличная работа!
 
-  <img src="images/ru/pocket_automl_classify.png" style="width: 50%" />
+  <img src="images/pocket_automl_predictor.png" style="width: 50%" />
 
 ## Следующие шаги
 
