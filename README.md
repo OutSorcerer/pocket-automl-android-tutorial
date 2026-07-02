@@ -10,7 +10,7 @@
 
 This document will walk you through the steps for creating your Android app that runs a deep learning image classification model trained in [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and exported in TensorFlow Lite (`.tflite`) format. The app will continuously classify whatever it sees from the device's back camera. 
 
-This tutorial is based on the [MediaPipe image classification Android example](https://github.com/google-ai-edge/mediapipe-samples/tree/main/examples/image_classification/android).
+This tutorial is based on the [Google AI Edge LiteRT image classification Android example](https://github.com/google-ai-edge/litert-samples/tree/main/compiled_model_api/image_classification).
 
 > **Note:** This app was modernized in 2026 — it is now written in **Kotlin** and uses [**LiteRT**](https://ai.google.dev/edge/litert) (the `CompiledModel` API) for inference, [CameraX](https://developer.android.com/training/camerax) for the camera, and a current Gradle/AGP build. The previous version (Java, Camera2, and the legacy TensorFlow Lite Task Library) is preserved at the [`pre-modernization`](https://github.com/OutSorcerer/pocket-automl-android-tutorial/tree/pre-modernization) tag.
 
@@ -117,7 +117,7 @@ Re-installing the app may require you to uninstall the previous installations.
 
 ## Step 6. Add your model from Pocket AutoML into the example app
 
-* At this point you must have your `<your_task_name>.tflite` model exported from Pocket AutoML. The class labels are embedded in the model's metadata, which is exactly what MediaPipe expects — there is nothing else to prepare.
+* At this point you must have your `<your_task_name>.tflite` model exported from Pocket AutoML. The class labels are embedded in the model's metadata, which the LiteRT Metadata library reads directly at runtime — there is nothing else to prepare.
 
 * Copy `<your_task_name>.tflite` into `pocket-automl-android-tutorial/app/src/main/assets`
 

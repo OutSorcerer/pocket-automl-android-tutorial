@@ -9,7 +9,7 @@
 
 Этот документ содержит шаги, следуя которым Вы создадите Ваше Android приложение, которое будет использовать deep learning модель классификации изображений, натренированную Вами в [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) и экспортированную в формате TensorFlow Lite (`.tflite`). Приложение будет непрерывно классифицировать изображения с тыловой камеры устройства.
 
-Это руководство основано на [примере классификации изображений MediaPipe для Android](https://github.com/google-ai-edge/mediapipe-samples/tree/main/examples/image_classification/android).
+Это руководство основано на [примере классификации изображений Google AI Edge LiteRT для Android](https://github.com/google-ai-edge/litert-samples/tree/main/compiled_model_api/image_classification).
 
 > **Примечание:** Приложение было модернизировано в 2026 году — теперь оно написано на **Kotlin** и использует [**LiteRT**](https://ai.google.dev/edge/litert) (API `CompiledModel`) для инференса, [CameraX](https://developer.android.com/training/camerax) для камеры и современную сборку Gradle/AGP. Предыдущая версия (Java, Camera2 и устаревшая TensorFlow Lite Task Library) сохранена в теге [`pre-modernization`](https://github.com/OutSorcerer/pocket-automl-android-tutorial/tree/pre-modernization).
 
@@ -113,7 +113,7 @@ Android Studio предложит скачать отсутствующие ко
 
 ## Шаг 6. Добавьте Вашу модель из Pocket AutoML в пример
 
-* На данный момент у Вас должен быть файл модели `<имя_вашей_задачи>.tflite`, экспортированный из Pocket AutoML. Названия классов встроены в метаданные модели — именно это и ожидает MediaPipe, так что больше ничего готовить не нужно.
+* На данный момент у Вас должен быть файл модели `<имя_вашей_задачи>.tflite`, экспортированный из Pocket AutoML. Названия классов встроены в метаданные модели — их напрямую читает библиотека LiteRT Metadata во время работы, так что больше ничего готовить не нужно.
 
 * Скопируйте `<имя_вашей_задачи>.tflite` в папку `pocket-automl-android-tutorial/app/src/main/assets`
 
