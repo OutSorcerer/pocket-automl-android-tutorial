@@ -4,6 +4,7 @@
 
 * [English](README.md) (this document)
 * [Русский](README_ru.md)
+* [简体中文](README_zh-CN.md)
 
 ## Overview
 

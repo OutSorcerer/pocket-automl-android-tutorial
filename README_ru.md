@@ -4,6 +4,7 @@
 
 * [English](README.md) 
 * [Русский](README_ru.md) (этот документ)
+* [简体中文](README_zh-CN.md)
 
 ## Обзор
 
@@ -132,10 +133,6 @@ Pocket AutoML использует подход [transfer learning](https://www.
 ### Изучение глубокого обучения
 
 Если Вы хотите узнать, как лучше тренировать модели и иметь систематическое понимание глубокого обучения я рекомендую [Deep Learning Specialization](https://www.coursera.org/specializations/deep-learning) и [Machine Learning Engineering for Production (MLOps) Specialization](https://www.coursera.org/specializations/machine-learning-engineering-for-production-mlops) на Coursera.
-
-## Attribution statements
-
-MediaPipe, TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc. Android is a trademark of Google LLC.
 
 ## Лицензия
 
