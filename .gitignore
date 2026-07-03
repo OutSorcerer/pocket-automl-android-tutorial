@@ -5,13 +5,16 @@
 /.idea/modules.xml
 /.idea/workspace.xml
 .DS_Store
+/build
 /*/build
 /captures
 .externalNativeBuild
 
 /.gradle/
 /.idea/
-/models/src/main/assets/efficientnet-lite0-fp32.tflite
-/models/src/main/assets/efficientnet-lite0-int8.tflite
-/models/src/main/assets/mobilenet_v1_1.0_224.tflite
-/models/src/main/assets/mobilenet_v1_1.0_224_quant.tflite
+/.kotlin/
+
+# MediaPipe models downloaded at build time by app/download_models.gradle
+# (the Pocket AutoML model, Kittens-or-Puppies.tflite, is committed and NOT ignored).
+/app/src/main/assets/efficientnet-lite0.tflite
+/app/src/main/assets/efficientnet-lite2.tflite

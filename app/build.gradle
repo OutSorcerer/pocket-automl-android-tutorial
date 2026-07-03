@@ -1,52 +1,81 @@
-apply plugin: 'com.android.application'
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.androidx.navigation.safeargs)
+    alias(libs.plugins.undercouch.download)
+}
 
 android {
-    compileSdkVersion 30
+    namespace 'com.evgeniymamchenko.pocketautoml.examples.classification'
+    compileSdk 36
+
     defaultConfig {
         applicationId "com.evgeniymamchenko.pocketautoml.examples.classification"
-        minSdkVersion 21
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        minSdk 24
+        targetSdk 36
+        versionCode 2
+        versionName "2.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    aaptOptions {
-        noCompress "tflite"
-    }
-    compileOptions {
-        sourceCompatibility = '1.8'
-        targetCompatibility = '1.8'
-    }
-    lintOptions {
-        abortOnError false
-    }
-    flavorDimensions "tfliteInference"
-    productFlavors {
-       // The TFLite inference is built using the TFLite Support library.
-       support {
-           dimension "tfliteInference"
-       }
-    }
-    buildToolsVersion '30.0.2'
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    androidResources {
+        noCompress 'tflite'
+    }
 }
 
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    supportImplementation project(":lib_support")
-    implementation 'androidx.appcompat:appcompat:1.3.1'
-    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.1.0'
-    implementation 'com.google.android.material:material:1.4.0'
+// Download the default EfficientNet-Lite models into the assets directory. The
+// Pocket AutoML model (Kittens-or-Puppies.tflite) is committed directly, so it
+// is not downloaded here.
+project.ext.ASSET_DIR = projectDir.toString() + '/src/main/assets'
+apply from: 'download_models.gradle'
 
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'com.google.truth:truth:1.0.1'
-    androidTestImplementation 'androidx.test:runner:1.4.0'
-    androidTestImplementation 'androidx.test:rules:1.4.0'
+dependencies {
+    // UI
+    implementation libs.androidx.appcompat
+    implementation libs.android.material
+    implementation libs.androidx.constraintlayout
+
+    // Navigation
+    implementation libs.androidx.navigation.fragment
+    implementation libs.androidx.navigation.ui
+
+    // CameraX
+    implementation libs.androidx.camera.core
+    implementation libs.androidx.camera.camera2
+    implementation libs.androidx.camera.lifecycle
+    implementation libs.androidx.camera.view
+
+    // LiteRT (formerly TensorFlow Lite): CompiledModel runtime + GPU acceleration,
+    // plus the support/metadata libraries for preprocessing and reading embedded
+    // labels. The mutual excludes avoid duplicate-class clashes between the
+    // *-api split modules (mirrors the official LiteRT sample).
+    implementation(libs.litert) {
+        exclude group: 'com.google.ai.edge.litert', module: 'litert-support'
+        exclude group: 'com.google.ai.edge.litert', module: 'litert-support-api'
+    }
+    implementation(libs.litert.support) {
+        exclude group: 'com.google.ai.edge.litert', module: 'litert-api'
+    }
+    implementation libs.litert.metadata
+
+    // Testing
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.test.ext.junit
+    androidTestImplementation libs.androidx.espresso.core
 }
