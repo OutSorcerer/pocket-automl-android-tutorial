@@ -8,11 +8,11 @@
 ## Overview
 
 
-This document will walk you through the steps for creating your Android app that runs a deep learning image classification model trained in [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and exported in TensorFlow Lite (`.tflite`) format. The app will continuously classify whatever it sees from the device's back camera. 
+This document will walk you through the steps for creating your Android app that runs a deep learning image classification model trained in [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) and exported in LiteRT (formerly TensorFlow Lite) `.tflite` format. The app will continuously classify whatever it sees from the device's back camera. 
 
 This tutorial is based on the [Google AI Edge LiteRT image classification Android example](https://github.com/google-ai-edge/litert-samples/tree/main/compiled_model_api/image_classification).
 
-> **Note:** This app was modernized in 2026 — it is now written in **Kotlin** and uses [**LiteRT**](https://ai.google.dev/edge/litert) (the `CompiledModel` API) for inference, [CameraX](https://developer.android.com/training/camerax) for the camera, and a current Gradle/AGP build. The previous version (Java, Camera2, and the legacy TensorFlow Lite Task Library) is preserved at the [`pre-modernization`](https://github.com/OutSorcerer/pocket-automl-android-tutorial/tree/pre-modernization) tag.
+> **Note:** This app was modernized in 2026 — it is now written in **Kotlin** and uses [**LiteRT**](https://ai.google.dev/edge/litert) (formerly TensorFlow Lite; the `CompiledModel` API) for inference, [CameraX](https://developer.android.com/training/camerax) for the camera, and a current Gradle/AGP build. The previous version (Java, Camera2, and the legacy TensorFlow Lite Task Library) is preserved at the [`pre-modernization`](https://github.com/OutSorcerer/pocket-automl-android-tutorial/tree/pre-modernization) tag.
 
 > If you have any issues following this tutorial please contact me (the creator of Pocket AutoML) via [email](mailto:pocket-automl@evgeniymamchenko.com) at or by creating a GitHub [issue](https://github.com/OutSorcerer/pocket-automl-android-tutorial/issues). 
 

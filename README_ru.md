@@ -7,11 +7,11 @@
 
 ## Обзор
 
-Этот документ содержит шаги, следуя которым Вы создадите Ваше Android приложение, которое будет использовать deep learning модель классификации изображений, натренированную Вами в [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) и экспортированную в формате TensorFlow Lite (`.tflite`). Приложение будет непрерывно классифицировать изображения с тыловой камеры устройства.
+Этот документ содержит шаги, следуя которым Вы создадите Ваше Android приложение, которое будет использовать deep learning модель классификации изображений, натренированную Вами в [Pocket AutoML](https://play.google.com/store/apps/details?id=com.evgeniymamchenko.pocketautoml) и экспортированную в формате LiteRT (ранее TensorFlow Lite) `.tflite`. Приложение будет непрерывно классифицировать изображения с тыловой камеры устройства.
 
 Это руководство основано на [примере классификации изображений Google AI Edge LiteRT для Android](https://github.com/google-ai-edge/litert-samples/tree/main/compiled_model_api/image_classification).
 
-> **Примечание:** Приложение было модернизировано в 2026 году — теперь оно написано на **Kotlin** и использует [**LiteRT**](https://ai.google.dev/edge/litert) (API `CompiledModel`) для инференса, [CameraX](https://developer.android.com/training/camerax) для камеры и современную сборку Gradle/AGP. Предыдущая версия (Java, Camera2 и устаревшая TensorFlow Lite Task Library) сохранена в теге [`pre-modernization`](https://github.com/OutSorcerer/pocket-automl-android-tutorial/tree/pre-modernization).
+> **Примечание:** Приложение было модернизировано в 2026 году — теперь оно написано на **Kotlin** и использует [**LiteRT**](https://ai.google.dev/edge/litert) (ранее TensorFlow Lite; API `CompiledModel`) для инференса, [CameraX](https://developer.android.com/training/camerax) для камеры и современную сборку Gradle/AGP. Предыдущая версия (Java, Camera2 и устаревшая TensorFlow Lite Task Library) сохранена в теге [`pre-modernization`](https://github.com/OutSorcerer/pocket-automl-android-tutorial/tree/pre-modernization).
 
 > Если у Вас возникли трудности при следовании этому руководству, напишите мне (создателю Pocket AutoML) на [электронную почту](mailto:pocket-automl@evgeniymamchenko.com) или создайте [issue](https://github.com/OutSorcerer/pocket-automl-android-tutorial/issues) на GitHub.
 
